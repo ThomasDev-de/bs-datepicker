@@ -1,0 +1,17 @@
+{
+  "name": "webcito/bs-datepicker",
+  "description": "description",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Thomas Kirsch",
+      "email": "t.kirsch@webcito.de"
+    }
+  ],
+  "require": {
+    "components/jquery": "^3",
+    "twbs/bootstrap": "^5",
+    "twbs/bootstrap-icons": "^1"
+  }
+}
