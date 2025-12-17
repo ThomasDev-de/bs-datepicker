@@ -16,6 +16,12 @@
                 prev: 'bi bi-chevron-left',
                 next: 'bi bi-chevron-right',
                 clear: 'bi bi-x-lg'
+            },
+            // CSS-Klassen für die sichtbare Anzeige (kein Input mehr)
+            classes: {
+                display: 'form-control d-flex align-items-center justify-content-between',
+                displayText: '',
+                displayIcon: 'bi bi-calendar-event'
             }
         }
     };
@@ -69,16 +75,22 @@
         const { format, locale, separator } = opts;
         if (typeof format === 'function') return format(value);
         const fmt = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const toLocalISO = (d) => {
+            if (!d) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        };
         if (Array.isArray(value)) {
             const [a, b] = value;
             if (!a && !b) return '';
             if (format === 'iso') {
-                const toISO = (d) => d ? d.toISOString().slice(0, 10) : '';
-                return [toISO(a), toISO(b)].filter(Boolean).join(separator);
+                return [toLocalISO(a), toLocalISO(b)].filter(Boolean).join(separator);
             }
             return [a ? fmt.format(a) : '', b ? fmt.format(b) : ''].filter(Boolean).join(separator);
         } else if (value instanceof Date) {
-            if (format === 'iso') return value.toISOString().slice(0, 10);
+            if (format === 'iso') return toLocalISO(value);
             return fmt.format(value);
         }
         return '';
@@ -179,7 +191,8 @@
                 if (isEnd) btnCls += ' rounded-0 ';
 
                 html += '<td class="' + tdCls.trim() + '">';
-                html += '<button type="button" class="' + btnCls.trim() + '" data-action="pick" data-date="' + d.toISOString() + '">';
+                // data-date als Millisekunden-Zeitstempel ablegen, um TZ-Parsing-Probleme zu vermeiden
+                html += '<button type="button" class="' + btnCls.trim() + '" data-action="pick" data-date="' + d.getTime() + '">';
                 html += d.getDate();
                 html += '</button>';
                 html += '</td>';
@@ -211,6 +224,21 @@
         html += '    </div>';
         html += '  </div>';
         html += '  <div class="card-body p-3">';
+        // Inline: kleine Textausgabe der aktuellen Auswahl innerhalb des Panels
+        if (opts.inline) {
+            const isRange = !!opts.range;
+            const dispOpts = $.extend({}, opts, { format: 'locale' });
+            let text = '';
+            if (isRange) {
+                const pair = clampRange(state.rangeStart, state.selected);
+                text = formatDateValue(pair, dispOpts);
+            } else {
+                text = formatDateValue(state.selected, dispOpts);
+            }
+            const placeholder = isRange ? 'Zeitraum wählen' : 'Datum auswählen';
+            const clsMuted = text ? '' : ' text-muted';
+            html += '    <div class="mb-2 small dp-inline-output' + clsMuted + '">' + (text || placeholder) + '</div>';
+        }
         // Maximal 2 Monate pro Zeile: Grid ohne Stretch (je Zeile genau 2 Spalten)
         html += '    <div class="row g-3">';
         for (let i = 0; i < months; i++) {
@@ -246,13 +274,17 @@
             // Auswahl löschen
             state.rangeStart = null;
             state.selected = null;
-            state.$input.val('').trigger('change');
+            // Anzeige/Hidden-Inputs leeren
+            if (state.$display) updateDisplay(state);
+            if (state.$inStart) state.$inStart.val('').trigger('change');
+            if (state.$inEnd) state.$inEnd.val('').trigger('change');
+            if (state.$input && !state.$display) state.$input.val('').trigger('change');
             updatePanel(state);
         });
         $panel.on('click.' + NS, '[data-action="pick"]', function (e) {
             e.preventDefault();
-            const iso = $(this).data('date');
-            const d = startOfDay(new Date(iso));
+            const stamp = $(this).data('date');
+            const d = startOfDay(new Date(typeof stamp === 'number' ? stamp : Number(stamp)));
             if (opts.range) {
                 const S = state.rangeStart;
                 const E = state.selected;
@@ -271,9 +303,8 @@
                     } else {
                         // gleich oder nach Start → Ende setzen (aber Dropdown offen lassen für Feintuning)
                         state.selected = d;
-                        const [a, b] = clampRange(state.rangeStart, state.selected);
-                        const val = formatDateValue([a, b], opts);
-                        state.$input.val(val).trigger('change');
+                        // Werte aktualisieren (Anzeige + Hidden)
+                        // Panel bleibt offen für Feintuning
                         // Kein Auto-Close beim erstmaligen Setzen des Endes, um direktes Nachjustieren zu erlauben
                         updatePanel(state);
                     }
@@ -295,16 +326,21 @@
                             state.selected = d;
                         }
                     }
-                    const [a, b] = clampRange(state.rangeStart, state.selected);
-                    state.$input.val(formatDateValue([a, b], opts)).trigger('change');
+                    // Werte aktualisieren (Anzeige + Hidden)
                     // Hinweis: Bei bestehender Range (Anpassung) NICHT automatisch schließen,
                     // damit feines Justieren möglich bleibt. Nur bei erstmaligem Setzen des Endes (oben) wird geschlossen.
                     updatePanel(state);
                 }
             } else {
                 state.selected = d;
-                const val = formatDateValue(d, opts);
-                state.$input.val(val).trigger('change');
+                // Werte aktualisieren (Anzeige + Hidden)
+                if (state.$display || state.$inStart) {
+                    const toLocalISO = (x) => x ? (function(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; })(x) : '';
+                    if (state.$inStart) state.$inStart.val(toLocalISO(state.selected)).trigger('change');
+                    if (state.$display) updateDisplay(state);
+                } else if (state.$input) {
+                    state.$input.val(formatDateValue(state.selected, state.opts)).trigger('change');
+                }
                 if (!opts.inline && opts.autoClose) hideDropdown(state);
                 updatePanel(state);
             }
@@ -314,6 +350,25 @@
     function updatePanel(state) {
         const html = renderTemplate(state);
         state.$panel.html(html);
+        // Nach jedem Render die aktuellen Werte in Anzeige/Hidden spiegeln
+        // (z. B. nach Clear oder externer setDate-Nutzung)
+        (function syncOutputs() {
+            const isRange = !!state.opts.range;
+            const dispOpts = $.extend({}, state.opts, { format: 'locale' });
+            const toLocalISO = (d) => d ? (function(x){ const y=x.getFullYear(); const m=String(x.getMonth()+1).padStart(2,'0'); const day=String(x.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; })(d) : '';
+            if (isRange) {
+                const [a, b] = clampRange(state.rangeStart, state.selected);
+                if (state.$display) updateDisplay(state);
+                if (state.$inStart) state.$inStart.val(toLocalISO(a));
+                if (state.$inEnd) state.$inEnd.val(toLocalISO(b));
+                if (state.$input && !state.$display) state.$input.val(formatDateValue([a, b], state.opts));
+            } else {
+                const d = state.selected;
+                if (state.$display) updateDisplay(state);
+                if (state.$inStart) state.$inStart.val(toLocalISO(d));
+                if (state.$input && !state.$display) state.$input.val(formatDateValue(d, state.opts));
+            }
+        })();
         attachEvents(state);
         // Wenn als Dropdown sichtbar: Breite exakt an den Inhalt bzw. an gewünschte Maximalbreite anpassen
         if (!state.opts.inline && state.$container && state.$container.is(':visible')) {
@@ -323,9 +378,9 @@
 
     function showDropdown(state) {
         if (state.opts.inline) return; // no-op
-        const $input = state.$input;
-        const off = $input.offset();
-        const h = $input.outerHeight();
+        const $anchor = state.$anchor || state.$input;
+        const off = $anchor.offset();
+        const h = $anchor.outerHeight();
         state.$container
             .css({ position: 'absolute', top: off.top + h + 4, left: off.left, zIndex: state.opts.zIndex, width: 'auto' })
             .addClass('show')
@@ -334,7 +389,7 @@
         applyCalculatedWidth(state);
         $(document).on('mousedown.' + NS, function (ev) {
             const $t = $(ev.target);
-            if ($t.closest(state.$container).length === 0 && $t.closest(state.$input).length === 0) {
+            if ($t.closest(state.$container).length === 0 && $t.closest($anchor).length === 0) {
                 hideDropdown(state);
             }
         });
@@ -381,8 +436,9 @@
         if (state.opts.inline) return; // no-op
         state.$container.removeClass('show').hide();
         // Input-Blur verhindert, dass ein Focus-Event das Dropdown sofort erneut öffnet
-        if (state.$input && state.$input.length) {
-            state.$input.trigger('blur');
+        const $anchor = state.$anchor || state.$input;
+        if ($anchor && $anchor.length) {
+            $anchor.trigger('blur');
         }
         // kurze Unterdrückung des erneuten Öffnens (z. B. durch Click-/Focus-Sequenzen)
         state.suppressOpenUntil = Date.now() + 150;
@@ -397,7 +453,8 @@
         state.rangeStart = null;    // range start
 
         if (opts.inline) {
-            state.$container = $('<div class="bs-datepicker inline"></div>').insertAfter(state.$input);
+            // Inline direkt IM Wrapper rendern
+            state.$container = $('<div class="bs-datepicker inline"></div>').appendTo(state.$root);
         } else {
             // --bs-dropdown-min-width standardmäßig 10rem → für inhaltsbreite Dropdowns auf auto setzen
             state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto;"></div>').appendTo('body');
@@ -411,20 +468,34 @@
 
         if (!opts.inline) {
             // Öffnen nur auf Click, nicht auf Focus (verhindert Re-Open direkt nach Blur)
-            state.$input.on('click.' + NS, function (ev) {
-                // Wenn bereits sichtbar, nichts tun
-                if (state.$container.is(':visible')) return;
-                // Guard: direkt nach Hide nicht wieder öffnen
-                if (state.suppressOpenUntil && Date.now() < state.suppressOpenUntil) return;
-                showDropdown(state);
-            });
+            const $anchor = state.$anchor || state.$input;
+            if ($anchor && $anchor.length) {
+                $anchor.on('click.' + NS, function () {
+                    if (state.$container.is(':visible')) return;
+                    if (state.suppressOpenUntil && Date.now() < state.suppressOpenUntil) return;
+                    showDropdown(state);
+                });
+                // Tastatur-Support: Enter/Leertaste öffnet Dropdown
+                $anchor.on('keydown.' + NS, function (ev) {
+                    const key = ev.key || ev.code;
+                    if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+                        ev.preventDefault();
+                        if (state.$container.is(':visible')) return;
+                        if (state.suppressOpenUntil && Date.now() < state.suppressOpenUntil) return;
+                        showDropdown(state);
+                    }
+                });
+            }
         }
     }
 
     function destroy(state) {
         hideDropdown(state);
         if (state.$container) state.$container.remove();
-        state.$input.off('.' + NS).removeData(NS);
+        if (state.$anchor) state.$anchor.off('.' + NS);
+        if (state.$input) state.$input.off('.' + NS);
+        const $dataEl = state.containerMode ? state.$root : state.$input;
+        if ($dataEl) $dataEl.removeData(NS);
         $(document).off('.' + NS);
     }
 
@@ -443,13 +514,10 @@
             if (Array.isArray(dateOrRange)) {
                 state.rangeStart = dateOrRange[0] ? startOfDay(new Date(dateOrRange[0])) : null;
                 state.selected = dateOrRange[1] ? startOfDay(new Date(dateOrRange[1])) : null;
-                const [a, b] = clampRange(state.rangeStart, state.selected);
-                this.val(formatDateValue([a, b], state.opts));
             } else if (dateOrRange) {
                 state.selected = startOfDay(new Date(dateOrRange));
-                this.val(formatDateValue(state.selected, state.opts));
             } else {
-                state.selected = null; state.rangeStart = null; this.val('');
+                state.selected = null; state.rangeStart = null;
             }
             updatePanel(state);
             return this;
@@ -477,10 +545,110 @@
             return $element;
         }
         const opts = $.extend({}, $.bsDatepicker.default, optionsOrMethod || {});
-        const state = { $input: $element, opts, $container: null, $panel: null, current: null, selected: null, rangeStart: null, suppressOpenUntil: 0 };
-        $element.data(NS, state);
+
+        // Unterstütze zwei Modi:
+        // 1) Legacy: Direkt auf einem sichtbaren <input> initialisiert
+        // 2) Container: Auf einem Wrapper (z. B. <div class="datepicker">) mit 1–2 hidden Inputs initialisiert
+        const isDirectInput = $element.is('input, textarea');
+
+        // State-Grundstruktur
+        const state = {
+            $input: null,             // Legacy sichtbares Eingabefeld (Direkt-Input)
+            $root: $element,          // Ursprüngliches Initialisierungs-Element
+            $anchor: null,            // Element, an dem Dropdown verankert wird (Input oder Anzeige-Input)
+            $display: null,           // Sichtbarer Anzeige-Wrapper (Container-Modus)
+            $displayText: null,       // Text-Span innerhalb der Anzeige
+            $inStart: null,           // Hidden Start (Range) oder Single
+            $inEnd: null,             // Hidden Ende (Range)
+            containerMode: false,     // true wenn auf Wrapper mit hidden Inputs
+            opts,
+            $container: null,
+            $panel: null,
+            current: null,
+            selected: null,
+            rangeStart: null,
+            suppressOpenUntil: 0
+        };
+
+        function initBindings() {
+            if (isDirectInput) {
+                // Legacy-Verwendung: alles wie bisher
+                state.$input = $element;
+                state.$anchor = state.$input;
+                state.containerMode = false;
+            } else {
+                // Container-Modus: suche Inputs im Wrapper
+                const $inputs = state.$root.find('input');
+                // Bevorzugt hidden, sonst beliebige
+                const $hidden = $inputs.filter('[type="hidden"]');
+                const list = $hidden.length ? $hidden : $inputs;
+                if (list.length >= 1) state.$inStart = $(list[0]);
+                if (list.length >= 2) state.$inEnd = $(list[1]);
+
+                // Range automatisch aus Anzahl Inputs ableiten
+                if (list.length >= 2) state.opts.range = true; else state.opts.range = false;
+
+                // Inline hat KEINEN sichtbaren Ausgabe-Wrapper, da die Kalender inline sind
+                if (state.opts.inline) {
+                    state.$display = null;
+                    state.$displayText = null;
+                    state.$anchor = null; // kein Dropdown-Anker nötig
+                    state.containerMode = true;
+                } else {
+                    // Sichtbarer Anzeige-Wrapper (kein Input) mit Text + Icon erzeugen (nur Dropdown)
+                    const cls = state.opts.classes || {};
+                    const dispCls = (cls.display || $.bsDatepicker.default.classes.display || '').trim();
+                    const textCls = (cls.displayText || $.bsDatepicker.default.classes.displayText || '').trim();
+                    const iconCls = (cls.displayIcon || $.bsDatepicker.default.classes.displayIcon || '').trim();
+                    state.$display = $('<div role="button" tabindex="0" class="dp-display ' + dispCls + '"></div>');
+                    state.$displayText = $('<span class="dp-display-text ' + textCls + '"></span>');
+                    const $icon = $('<i class="dp-display-icon ' + iconCls + '"></i>');
+                    state.$display.append(state.$displayText).append($icon);
+                    state.$root.append(state.$display);
+                    state.$anchor = state.$display;
+                    state.containerMode = true;
+                }
+            }
+        }
+
+        // keine separate setOutputs mehr nötig, Synchronisierung erfolgt in updatePanel()
+
+        initBindings();
+
+        // State im Element speichern (auf dem Anker, damit Methoden-Aufrufe weiterhin funktionieren)
+        (state.containerMode ? state.$root : state.$input).data(NS, state);
+
+        // create() erwartet state.$input (für Legacy) – für Container spielt nur $anchor eine Rolle
+        if (!state.containerMode) {
+            state.$input = state.$anchor;
+        }
+
+        // Erstellen mit den angepassten globalen Funktionen
         create(state);
-        return $element;
+
+        return (state.containerMode ? state.$root : state.$input);
     };
+
+    // Hilfsfunktion: Anzeige-Text im Wrapper aktualisieren
+    function updateDisplay(state) {
+        if (!state.$display) return;
+        const isRange = !!state.opts.range;
+        const dispOpts = $.extend({}, state.opts, { format: 'locale' });
+        let text = '';
+        if (isRange) {
+            const [a, b] = clampRange(state.rangeStart, state.selected);
+            text = formatDateValue([a, b], dispOpts);
+        } else {
+            text = formatDateValue(state.selected, dispOpts);
+        }
+        const placeholder = isRange ? 'Zeitraum wählen' : 'Datum auswählen';
+        // Falls kein spezielles Text-Element vorhanden (Legacy-Fall), setze Titel als Fallback
+        if (state.$displayText && state.$displayText.length) {
+            state.$displayText.text(text || placeholder);
+            state.$display.toggleClass('text-muted', !text);
+        } else {
+            state.$display.text(text || placeholder);
+        }
+    }
 
 }(jQuery));

@@ -8,7 +8,7 @@ Highlights
 - Inline oder als Dropdown
 - Wochenstart Montag oder Sonntag
 - Mehrmonats‑Ansicht (`months`)
-
+ - Sichtbare Anzeige als klickbarer Wrapper (kein Input) inkl. Kalender‑Icon (nur im Dropdown‑Modus; im Inline‑Modus kein separater Wrapper)
  - Konfigurierbare Navigations‑ und Clear‑Icons (Bootstrap Icons Klassen)
 
 Optionen
@@ -25,8 +25,12 @@ Optionen
    - `prev` (string): Icon für „Vorheriger Monat“, Standard `bi bi-chevron-left`
    - `next` (string): Icon für „Nächster Monat“, Standard `bi bi-chevron-right`
    - `clear` (string): Icon für „Auswahl löschen“, Standard `bi bi-x-lg`
+ - `classes` (object): Klassen für die sichtbare Anzeige (Wrapper)
+   - `display` (string): Klassen auf dem Wrapper (Standard: `form-control d-flex align-items-center justify-content-between`)
+   - `displayText` (string): Klassen auf dem Text‑Span
+   - `displayIcon` (string): Klassen auf dem Icon (Standard: `bi bi-calendar-event`)
 
-Beispiel
+Beispiel (Legacy – direktes Input)
 ```html
 <input id="dp" type="text" class="form-control">
 <script>
@@ -43,9 +47,24 @@ Beispiel
   });
 ```
 
+Beispiel (Container‑Modus – Hidden Inputs im Wrapper)
+```html
+<div id="rangeInline" class="datepicker">
+  <input type="hidden" name="range_start">
+  <input type="hidden" name="range_end">
+  <!-- Dropdown: Sichtbarer Wrapper (kein Input) wird vom Plugin erzeugt -->
+  <!-- Inline: KEIN separater Wrapper; Kalender werden direkt im Wrapper gerendert,
+       oberhalb der Monate wird die aktuelle Auswahl als kleiner Text angezeigt. -->
+</div>
+<script>
+  $('#rangeInline').bsDatepicker({ inline: true, months: 2, classes: { displayIcon: 'bi bi-calendar3' } });
+</script>
+```
+
 Hinweise
 - Für die Anzeige der Symbole muss das CSS von Bootstrap Icons eingebunden werden, z. B.:
   ```html
   <link href="/path/to/bootstrap-icons.css" rel="stylesheet">
   ```
-- Der „Clear“-Button in der Kopfzeile leert die Auswahl (Single‑Datum oder Range) und das Eingabefeld.
+- Der „Clear“-Button in der Kopfzeile leert die Auswahl (Single‑Datum oder Range). Hidden‑Inputs werden auf leere Strings gesetzt.
+- Im Container‑Modus werden die Hidden‑Inputs immer im ISO‑Format `YYYY-MM-DD` befüllt. Die sichtbare Anzeige zeigt lokalisierte, formatierte Werte.

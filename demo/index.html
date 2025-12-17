@@ -13,13 +13,17 @@
     <form id="demoForm" class="card p-3">
         <div class="row g-3">
             <div class="col-md-6">
-                <label for="datepicker" class="form-label">Single (Dropdown)</label>
-                <input type="text" class="form-control" id="datepicker" name="single">
+                <h5>Single (Dropdown)</h5>
+                <div class="datepicker" id="singleDropdown">
+                    <input type="hidden" name="single">
+                </div>
             </div>
             <div class="col-md-6">
-                <label for="rangeInline" class="form-label">Range Inline (2 Monate)</label>
-                <input type="text" class="form-control mb-2" id="rangeInline" name="range">
-                <div id="inlineHost"></div>
+                <h5>Range Inline (2 Monate)</h5>
+                <div class="datepicker" id="rangeInline">
+                    <input type="hidden" name="range_start">
+                    <input type="hidden" name="range_end">
+                </div>
             </div>
         </div>
         <div class="mt-3">
@@ -36,18 +40,20 @@
 <script src="../dist/bs-datepicker.js"></script>
 <script>
     $(function () {
-        // Single (Dropdown)
-        $('#datepicker').bsDatepicker({ range: false, inline: false });
+        // Single (Dropdown) – Input hidden, Anzeige wird erzeugt
+        $('#singleDropdown').bsDatepicker({inline: false});
 
-        // Range Inline mit 4 Monaten (sichtbar)
-        $('#rangeInline').bsDatepicker({ range: true, inline: false, months: 4 });
+        // Range Inline mit 2 Monaten (sichtbar)
+        $('#rangeInline').bsDatepicker({inline: true, months: 2});
 
         // Demo-Form Submit → Alert mit Form-Werten
         $('#demoForm').on('submit', function (e) {
             e.preventDefault();
             const data = $(this).serializeArray();
             const values = {};
-            data.forEach(function (item) { values[item.name] = item.value; });
+            data.forEach(function (item) {
+                values[item.name] = item.value;
+            });
             alert('Form values:\n' + JSON.stringify(values, null, 2));
         });
     });
