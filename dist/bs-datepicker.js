@@ -263,6 +263,7 @@
                         // Emphasize the range edges
                         btnCls += ' border border-primary fw-semibold ';
                     }
+                    // Rounded corners at the visual range boundaries (precise corners only)
                 } else {
                     if (isSelected) {
                         // Single selection: use subtle filled background like range edges for better visibility
@@ -281,8 +282,19 @@
                 // Disabled: give a subtle gray background, analogous to the subtle blue of selection
                 // Uses Bootstrap 5.3 utilities: bg-secondary-subtle + text-secondary-emphasis
                 const disabledEnhance = disabled ? ' bg-secondary-subtle text-secondary-emphasis ' : '';
-                const clsFinal = (btnCls + (disabled ? ' disabled ' : '') + disabledEnhance).trim();
-                html += '<button type="button" class="' + clsFinal + '"' + actionAttr + disAttr + ' data-date="' + d.getTime() + '">';
+                // Add structural classes for styling without extra CSS files
+                // dp-start / dp-end allow inline styles below to target edges precisely per button
+                const structCls = (isStart ? ' dp-start ' : '') + (isEnd ? ' dp-end ' : '');
+                const clsFinal = (btnCls + (disabled ? ' disabled ' : '') + disabledEnhance + structCls).trim();
+                // Inline styles (no external CSS): draw thin primary caps at left/right for start/end
+                // Also round desired single corners only
+                let cornerStyle = '';
+                if (isRange) {
+                    if (isStart) cornerStyle += 'border-top-left-radius: var(--bs-border-radius); box-shadow: inset 2px 0 0 0 var(--bs-primary);';
+                    if (isEnd) cornerStyle += 'border-bottom-right-radius: var(--bs-border-radius); box-shadow: inset -2px 0 0 0 var(--bs-primary);';
+                }
+                const styleAttr = cornerStyle ? ' style="' + cornerStyle + '"' : '';
+                html += '<button type="button" class="' + clsFinal + '"' + styleAttr + actionAttr + disAttr + ' data-date="' + d.getTime() + '">';
                 html += d.getDate();
                 html += '</button>';
                 html += '</td>';
@@ -426,8 +438,15 @@
 
                 // Case 3 (toggle off): clicking exactly on current start or end clears that edge
                 if (S && isSameDay(d, S)) {
-                    state.rangeStart = null; // remove start
-                    // keep end as-is; next click will define a new start
+                    // If only start existed (no end), allow immediate re-set of start on same click
+                    if (!E) {
+                        // Interpret as re-pick of start
+                        state.rangeStart = d;
+                        updatePanel(state);
+                        return;
+                    }
+                    // With both edges present: clear start only; user will pick a new start next
+                    state.rangeStart = null;
                     updatePanel(state);
                     return;
                 }
@@ -454,6 +473,17 @@
                         state.selected = d;
                     }
                     // Keep dropdown open for fine-tuning
+                    updatePanel(state);
+                } else if (!S && E) {
+                    // Only end exists, start open (after deselecting start)
+                    if (d <= E) {
+                        // Click left/equal end -> set start to D
+                        state.rangeStart = d;
+                    } else {
+                        // Click right of current end -> swap so that previous end becomes start
+                        state.rangeStart = E;
+                        state.selected = d;
+                    }
                     updatePanel(state);
                 } else if (S && E) {
                     // Complete range present → move the nearer edge

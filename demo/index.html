@@ -144,6 +144,13 @@
     <script src="../dist/bs-datepicker.js"></script>
     <script>
         $(function () {
+            function fmtLocalISO(d){
+                if(!d) return '';
+                var y=d.getFullYear();
+                var m=String(d.getMonth()+1).padStart(2,'0');
+                var day=String(d.getDate()).padStart(2,'0');
+                return y+'-'+m+'-'+day;
+            }
             // Single (Dropdown) – hidden input, visible display is created by the plugin
             $('#singleDropdown').bsDatepicker({
                 inline: false,
@@ -242,7 +249,7 @@
             // Single Dropdown: method examples
             $('#btnSD_GetDate').on('click', function(){
                 var d = $('#singleDropdown').bsDatepicker('getDate');
-                alert('getDate(): ' + (d ? d.toISOString().slice(0,10) : 'null'));
+                alert('getDate(): ' + (d ? fmtLocalISO(d) : 'null'));
             });
             $('#btnSD_SetDateToday').on('click', function(){
                 $('#singleDropdown').bsDatepicker('setDate', new Date());
@@ -296,7 +303,7 @@
             });
             $('#btnSI_GetDate').on('click', function(){
                 var d = $('#singleInline').bsDatepicker('getDate');
-                alert('getDate(): ' + (d ? d.toISOString().slice(0,10) : 'null'));
+                alert('getDate(): ' + (d ? fmtLocalISO(d) : 'null'));
             });
             $('#btnSI_SetDateToday').on('click', function(){
                 $('#singleInline').bsDatepicker('setDate', new Date());
@@ -325,7 +332,7 @@
             // Range Dropdown: more methods
             $('#btnRD_GetDate').on('click', function(){
                 var d = $('#rangeDropdown').bsDatepicker('getDate');
-                var fmt = function(x){ return x ? x.toISOString().slice(0,10) : ''; };
+                var fmt = function(x){ return x ? fmtLocalISO(x) : ''; };
                 if (Array.isArray(d)) alert('getDate(): [' + fmt(d[0]) + ', ' + fmt(d[1]) + ']'); else alert('getDate(): ' + fmt(d));
             });
             $('#btnRD_ValGet').on('click', function(){
