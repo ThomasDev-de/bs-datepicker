@@ -7,68 +7,137 @@
     <link href="../vendor/twbs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../vendor/twbs/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body class="p-3">
-<div class="container">
-    <h1 class="mb-3">Bootstrap Datepicker</h1>
-    <form id="demoForm" class="card p-3">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <h5>Single (Dropdown)</h5>
-                <div class="datepicker" id="singleDropdown">
-                    <input type="hidden" name="single">
+<body class="bg-light">
+<div class="container py-4">
+    <header class="text-center mb-4">
+        <h1 class="fw-semibold">Bootstrap Datepicker</h1>
+        <p class="text-muted mb-0">Kompakte Demo der API – modern, aufgeräumt, einspaltig</p>
+    </header>
+
+    <form id="demoForm">
+    <div class="row justify-content-center g-4">
+        <div class="col-12 col-lg-8">
+            <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Single (Dropdown)</h5>
+                    <div class="datepicker mb-3" id="singleDropdown">
+                        <input type="hidden" name="single">
+                    </div>
+                    <div class="mb-2 small text-uppercase text-muted">Disabled Presets</div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPast">Lock past</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFuture">Lock future</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnHolidays">Lock holidays</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDisableDates">Test window</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearDis">Clear locks</button>
+                    </div>
+                    <div class="mb-2 small text-uppercase text-muted">Methods</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_GetDate">getDate()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_SetDateToday">setDate(today)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_ValGet">val(get)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_ValSetToday">val(set today)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_GetDisabled">getDisableDates()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_SetMin">setMin(today)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_SetMax">setMax(+30d)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_ClearDisabled">clearDisableDates()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_LocaleEN">setLocale(en-US)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_LocaleDE">setLocale(de-DE)</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnSD_Destroy">destroy()</button>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="btnSD_Reinit">re-init</button>
+                    </div>
                 </div>
-                <div class="mt-2 d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPast">Lock past</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFuture">Lock future</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnHolidays">Lock holidays</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDisableDates">Test window</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearDis">Clear locks</button>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <h5>Range Inline (2 months)</h5>
-                <div class="datepicker" id="rangeInline">
-                    <input type="hidden" name="range_start">
-                    <input type="hidden" name="range_end">
-                </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Additional examples -->
-        <div class="row g-3 mt-2">
-            <div class="col-md-6">
-                <h5>Single Inline (with val)</h5>
-                <div class="datepicker" id="singleInline">
-                    <input type="hidden" name="single_inline">
+        <div class="col-12 col-lg-8">
+            <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Range Inline (3 months)</h5>
+                    <div class="datepicker mb-3" id="rangeInline">
+                        <input type="hidden" name="range_start">
+                        <input type="hidden" name="range_end">
+                    </div>
+                    <div class="mb-2 small text-uppercase text-muted">Methods</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_GetDate">getDate()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_SetQ1">setDate(Q1 2025)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_GetDisabled">getDisableDates()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_SetMin">setMin(2025-01-01)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_SetMax">setMax(2025-12-31)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_ClearDisabled">clearDisableDates()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_LocaleEN">setLocale(en-US)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_LocaleDE">setLocale(de-DE)</button>
+                    </div>
                 </div>
-                <div class="mt-2 d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetTodayInline">Set today</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadInline">Read value</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearInline">Clear</button>
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Single Inline</h5>
+                    <div class="datepicker mb-3" id="singleInline">
+                        <input type="hidden" name="single_inline">
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetTodayInline">Set today</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadInline">Read value</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearInline">Clear</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_GetDate">getDate()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_SetDateToday">setDate(today)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_LocaleEN">setLocale(en-US)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_LocaleDE">setLocale(de-DE)</button>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <h5>Range (Dropdown) with min/max + val</h5>
-                <div class="datepicker" id="rangeDropdown">
-                    <input type="hidden" name="rd_start">
-                    <input type="hidden" name="rd_end">
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Range (Dropdown)</h5>
+                    <div class="datepicker mb-3" id="rangeDropdown">
+                        <input type="hidden" name="rd_start">
+                        <input type="hidden" name="rd_end">
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetQ1">Set Q1 2025</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadRange">Read value</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearRange">Clear</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnYear2025">Allow only 2025</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_GetDate">getDate()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_ValGet">val(get)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_ValSet">val(set Q1)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_GetDisabled">getDisableDates()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_SetMin">setMin(2025-01-01)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_SetMax">setMax(2025-12-31)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_ClearDisabled">clearDisableDates()</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_LocaleEN">setLocale(en-US)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_LocaleDE">setLocale(de-DE)</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnRD_Destroy">destroy()</button>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="btnRD_Reinit">re-init</button>
+                    </div>
                 </div>
-                <div class="mt-2 d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetQ1">Set Q1 2025</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadRange">Read value</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearRange">Clear</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnYear2025">Allow only 2025</button>
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Submit Beispiel</h5>
+                    <p class="text-muted small">Die Hidden-Inputs werden mit ISO-Format befüllt.</p>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> Submit
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-send"></i> Submit
-            </button>
-        </div>
+    </div>
     </form>
+<!-- form/row closed above; close container -->
+</div> <!-- /.container -->
 
-</div>
 
 <script src="../vendor/components/jquery/jquery.min.js"></script>
 <script src="../vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -111,15 +180,41 @@
             });
 
             // Demo form submit → alert form values
+            // Global submit feedback at the very end of the page (single toast area)
+            const $globalFeedbackHost = $('<div id="globalSubmitFeedback" class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index:1080; width:min(680px, 90vw);"></div>').appendTo('body');
+
             $('#demoForm').on('submit', function (e) {
                 e.preventDefault();
-                const data = $(this).serializeArray();
-                const values = {};
-                data.forEach(function (item) {
-                    values[item.name] = item.value;
-                });
-                alert('Form values:\n' + JSON.stringify(values, null, 2));
+                try {
+                    const data = $(this).serializeArray();
+                    const values = {};
+                    data.forEach(function (item) {
+                        values[item.name] = item.value;
+                    });
+                    console.info('Form submit captured:', values);
+                    // Single, global feedback (bottom center)
+                    const html = [
+                        '<div class="alert alert-success alert-dismissible fade show shadow" role="alert">',
+                        '<div class="d-flex align-items-start gap-2">',
+                        '<i class="bi bi-check-circle-fill"></i>',
+                        '<div><strong>Submitted!</strong><br><code class="d-block small">',
+                        $('<div/>').text(JSON.stringify(values, null, 2)).html().replace(/\n/g,'<br>').replace(/\s/g,'&nbsp;'),
+                        '</code></div>',
+                        '</div>',
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                        '</div>'
+                    ].join('');
+                    $globalFeedbackHost.html(html);
+                } catch (err) {
+                    console.error('Submit handler error:', err);
+                    alert('Submit failed: ' + err);
+                }
             });
+
+            // Helper: cleanup display wrappers before re-init (to avoid duplicates)
+            function cleanupDisplay(id){
+                $(id).find('.dp-display').remove();
+            }
 
             // Buttons: live toggle disabled dates
             $('#btnDisableDates').on('click', function(){
@@ -144,6 +239,50 @@
                 $('#singleDropdown').bsDatepicker('clearDisableDates');
             });
 
+            // Single Dropdown: method examples
+            $('#btnSD_GetDate').on('click', function(){
+                var d = $('#singleDropdown').bsDatepicker('getDate');
+                alert('getDate(): ' + (d ? d.toISOString().slice(0,10) : 'null'));
+            });
+            $('#btnSD_SetDateToday').on('click', function(){
+                $('#singleDropdown').bsDatepicker('setDate', new Date());
+            });
+            $('#btnSD_ValGet').on('click', function(){
+                var v = $('#singleDropdown').bsDatepicker('val');
+                alert('val(): ' + v);
+            });
+            $('#btnSD_ValSetToday').on('click', function(){
+                $('#singleDropdown').bsDatepicker('val', new Date());
+            });
+            $('#btnSD_GetDisabled').on('click', function(){
+                var cfg = $('#singleDropdown').bsDatepicker('getDisableDates');
+                alert('getDisableDates():\n' + JSON.stringify(cfg, null, 2));
+            });
+            $('#btnSD_SetMin').on('click', function(){
+                $('#singleDropdown').bsDatepicker('setMin', new Date());
+            });
+            $('#btnSD_SetMax').on('click', function(){
+                var d = new Date();
+                d.setDate(d.getDate() + 30);
+                $('#singleDropdown').bsDatepicker('setMax', d);
+            });
+            $('#btnSD_ClearDisabled').on('click', function(){
+                $('#singleDropdown').bsDatepicker('clearDisableDates');
+            });
+            $('#btnSD_LocaleEN').on('click', function(){
+                $('#singleDropdown').bsDatepicker('setLocale', 'en-US');
+            });
+            $('#btnSD_LocaleDE').on('click', function(){
+                $('#singleDropdown').bsDatepicker('setLocale', 'de-DE');
+            });
+            $('#btnSD_Destroy').on('click', function(){
+                $('#singleDropdown').bsDatepicker('destroy');
+            });
+            $('#btnSD_Reinit').on('click', function(){
+                cleanupDisplay('#singleDropdown');
+                $('#singleDropdown').bsDatepicker({ inline:false, locale:'en-US', placeholder:'Pick a date' });
+            });
+
             // Buttons: single inline val()
             $('#btnSetTodayInline').on('click', function(){
                 $('#singleInline').bsDatepicker('val', new Date());
@@ -154,6 +293,19 @@
             });
             $('#btnClearInline').on('click', function(){
                 $('#singleInline').bsDatepicker('val', null);
+            });
+            $('#btnSI_GetDate').on('click', function(){
+                var d = $('#singleInline').bsDatepicker('getDate');
+                alert('getDate(): ' + (d ? d.toISOString().slice(0,10) : 'null'));
+            });
+            $('#btnSI_SetDateToday').on('click', function(){
+                $('#singleInline').bsDatepicker('setDate', new Date());
+            });
+            $('#btnSI_LocaleEN').on('click', function(){
+                $('#singleInline').bsDatepicker('setLocale', 'en-US');
+            });
+            $('#btnSI_LocaleDE').on('click', function(){
+                $('#singleInline').bsDatepicker('setLocale', 'de-DE');
             });
 
             // Buttons: range (dropdown) val() + min/max demo
@@ -169,6 +321,74 @@
             });
             $('#btnYear2025').on('click', function(){
                 $('#rangeDropdown').bsDatepicker('setDisableDates', { min: '2025-01-01', max: '2025-12-31' });
+            });
+            // Range Dropdown: more methods
+            $('#btnRD_GetDate').on('click', function(){
+                var d = $('#rangeDropdown').bsDatepicker('getDate');
+                var fmt = function(x){ return x ? x.toISOString().slice(0,10) : ''; };
+                if (Array.isArray(d)) alert('getDate(): [' + fmt(d[0]) + ', ' + fmt(d[1]) + ']'); else alert('getDate(): ' + fmt(d));
+            });
+            $('#btnRD_ValGet').on('click', function(){
+                var v = $('#rangeDropdown').bsDatepicker('val');
+                alert('val(): [' + v[0] + ', ' + v[1] + ']');
+            });
+            $('#btnRD_ValSet').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('val', ['2025-04-01', '2025-04-15']);
+            });
+            $('#btnRD_GetDisabled').on('click', function(){
+                var cfg = $('#rangeDropdown').bsDatepicker('getDisableDates');
+                alert('getDisableDates():\n' + JSON.stringify(cfg, null, 2));
+            });
+            $('#btnRD_SetMin').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('setMin', '2025-01-01');
+            });
+            $('#btnRD_SetMax').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('setMax', '2025-12-31');
+            });
+            $('#btnRD_ClearDisabled').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('clearDisableDates');
+            });
+            $('#btnRD_LocaleEN').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('setLocale', 'en-US');
+            });
+            $('#btnRD_LocaleDE').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('setLocale', 'de-DE');
+            });
+            $('#btnRD_Destroy').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('destroy');
+            });
+            $('#btnRD_Reinit').on('click', function(){
+                cleanupDisplay('#rangeDropdown');
+                $('#rangeDropdown').bsDatepicker({ inline:false, locale:'en-US', months:2, placeholder:'Range (Dropdown)' });
+            });
+
+            // Range Inline: method examples
+            $('#btnRI_GetDate').on('click', function(){
+                var d = $('#rangeInline').bsDatepicker('getDate');
+                var fmt = function(x){ return x ? x.toISOString().slice(0,10) : ''; };
+                if (Array.isArray(d)) alert('getDate(): [' + fmt(d[0]) + ', ' + fmt(d[1]) + ']'); else alert('getDate(): ' + fmt(d));
+            });
+            $('#btnRI_SetQ1').on('click', function(){
+                $('#rangeInline').bsDatepicker('setDate', ['2025-01-01', '2025-03-31']);
+            });
+            $('#btnRI_GetDisabled').on('click', function(){
+                var cfg = $('#rangeInline').bsDatepicker('getDisableDates');
+                alert('getDisableDates():\n' + JSON.stringify(cfg, null, 2));
+            });
+            $('#btnRI_SetMin').on('click', function(){
+                $('#rangeInline').bsDatepicker('setMin', '2025-01-01');
+            });
+            $('#btnRI_SetMax').on('click', function(){
+                $('#rangeInline').bsDatepicker('setMax', '2025-12-31');
+            });
+            $('#btnRI_ClearDisabled').on('click', function(){
+                $('#rangeInline').bsDatepicker('clearDisableDates');
+            });
+            $('#btnRI_LocaleEN').on('click', function(){
+                $('#rangeInline').bsDatepicker('setLocale', 'en-US');
+            });
+            $('#btnRI_LocaleDE').on('click', function(){
+                $('#rangeInline').bsDatepicker('setLocale', 'de-DE');
             });
         });
     </script>

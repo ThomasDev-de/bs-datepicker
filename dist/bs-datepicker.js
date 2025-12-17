@@ -21,7 +21,7 @@
                 nextYear: 'bi bi-chevron-double-right',
                 clear: 'bi bi-x-lg'
             },
-            // CSS-Klassen für die sichtbare Anzeige (kein Input mehr)
+            // CSS classes for the visible display (no actual input field)
             classes: {
                 display: 'form-control d-flex align-items-center justify-content-between',
                 displayText: '',
@@ -37,6 +37,19 @@
     };
 
     const NS = 'bs.datepicker';
+
+    // Event emitter helper (all events share the same namespace: bs.datepicker)
+    // Usage: emit(state, 'changeDate', { selected: Date|[Date,Date]|null })
+    function emit(state, name, detail) {
+        const $target = state.containerMode ? state.$root : (state.$input || state.$anchor || state.$root);
+        if (!$target || !$target.length) return;
+        try {
+            const ev = $.Event(name + '.' + NS, { detail: detail || {} });
+            $target.trigger(ev, [detail || {}]);
+        } catch (e) {
+            // no-op fail safe
+        }
+    }
 
     // Utilities
     function startOfDay(d) {
@@ -121,6 +134,7 @@
         return days.slice(1).concat(days.slice(0, 1));
     }
     function getMonthYearTitle(date, locale) {
+        // Full month name for per-month headers above each calendar
         const fmt = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
         return fmt.format(date);
     }
@@ -198,13 +212,15 @@
         html += '<div class="mb-2">';
         html += '  <div class="fw-semibold text-capitalize text-center mb-0">' + title + '</div>';
         html += '  <div class="table-responsive">';
-        // Kompakte, inhaltsbasierte Tabellenbreite, Zellen bleiben gleichmäßig (Buttons füllen die Zellen)
-        html += '    <table class="table table-sm table-borderless mb-0 text-center align-middle user-select-none w-auto">';
+        // Compact, content-based table; cells remain even (buttons fill the cell)
+        // Make the table span the full tile width so the visual center aligns with the title
+        // Use table-layout: fixed to keep 7 equal columns and prevent width jumps when locale changes
+        html += '    <table class="table table-sm table-borderless mb-0 text-center align-middle user-select-none w-100" style="table-layout:fixed">';
         html += '      <thead><tr>';
         weekdays.forEach(w => { html += '<th class="text-muted small">' + w + '</th>'; });
         html += '      </tr></thead>';
         html += '      <tbody>';
-        // dynamische Zeilenzahl: nur so viele Zeilen, wie der Monat benötigt
+        // Dynamic number of rows: only as many rows as the month needs
         const year = currMonthDate.getFullYear();
         const month = currMonthDate.getMonth();
         const firstOfMonth = new Date(year, month, 1);
@@ -218,8 +234,8 @@
             html += '<tr>';
             for (let c = 0; c < 7; c++) {
                 const idx = r * 7 + c;
-                const dayIndex = idx - startIdx; // 0-basiert relativ zum Monat (kann <0 / >= dim sein)
-                // Datum auch für Vor-/Nachmonat ermitteln
+                const dayIndex = idx - startIdx; // 0-based relative to month (can be <0 or >= dim)
+                // Also compute dates for previous/next month
                 const d = startOfDay(new Date(year, month, dayIndex + 1));
                 const inMonth = dayIndex >= 0 && dayIndex < dim;
                 const isToday = isSameDay(d, today);
@@ -227,42 +243,45 @@
                 const isStart = isRange && rangeStart && isSameDay(d, rangeStart);
                 const isEnd = isRange && selected && !isStart && isSameDay(d, selected);
                 const isBetween = isRange && rangeStart && selected && inRange(d, rangeStart, selected) && !isStart && !isEnd;
-                const muted = !inMonth; // Vor-/Nachmonat abgedunkelt anzeigen
+                const muted = !inMonth; // Dim days outside current month
 
-                // TD-Klassen: nur Padding entfernen, keine Farben/Rundungen auf TD
-                let tdCls = 'p-0'; // kein Space zwischen den Tagen
+                // TD classes: only remove padding, no colors/borders on TD
+                let tdCls = 'p-0'; // no spacing between days
 
-                // Button-Klassen: Basis ohne Rundung; breite Buttons füllen die Zelle
-                // Subtle highlighting (Bootstrap 5.3 Utilities)
+                // Button classes: base without rounded corners; full-width buttons fill cells
+                // Subtle highlighting (Bootstrap 5.3 utilities)
                 let btnCls = 'btn btn-sm w-100 border-0 rounded-0 ';
                 const inRangeAny = isStart || isEnd || isBetween;
 
-                // Subtle Theme (always on)
+                // Subtle theme (always on)
                 if (isRange) {
                     if (inRangeAny) {
-                        // Zwischenbereich und Ränder: dezente Füllung
+                        // Middle and edges of the range get subtle fill
                         btnCls += ' bg-primary-subtle text-primary-emphasis ';
                     }
                     if (isStart || isEnd) {
-                        // Ränder zusätzlich visuell markieren
+                        // Emphasize the range edges
                         btnCls += ' border border-primary fw-semibold ';
                     }
                 } else {
                     if (isSelected) {
-                        // Single-Auswahl dezent mit Outline
-                        btnCls += ' btn-outline-primary text-primary-emphasis fw-semibold border ';
+                        // Single selection: use subtle filled background like range edges for better visibility
+                        btnCls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary ';
                     }
                 }
                 if (muted) btnCls += ' text-muted ';
-                // Heute dezent, sofern nicht Teil der Auswahl
+                // Today: subtle emphasis if not part of selection
                 if (isToday && !(isSelected || inRangeAny)) btnCls += ' text-primary fw-semibold ';
 
                 const disabled = isDisabledDate(d, state);
                 html += '<td class="' + tdCls.trim() + '">';
-                // data-date als Millisekunden-Zeitstempel ablegen, um TZ-Parsing-Probleme zu vermeiden
+                // Store data-date as millisecond timestamp to avoid TZ parsing pitfalls
                 const actionAttr = disabled ? '' : ' data-action="pick"';
                 const disAttr = disabled ? ' disabled aria-disabled="true"' : '';
-                const clsFinal = (btnCls + (disabled ? ' disabled ' : '')).trim();
+                // Disabled: give a subtle gray background, analogous to the subtle blue of selection
+                // Uses Bootstrap 5.3 utilities: bg-secondary-subtle + text-secondary-emphasis
+                const disabledEnhance = disabled ? ' bg-secondary-subtle text-secondary-emphasis ' : '';
+                const clsFinal = (btnCls + (disabled ? ' disabled ' : '') + disabledEnhance).trim();
                 html += '<button type="button" class="' + clsFinal + '"' + actionAttr + disAttr + ' data-date="' + d.getTime() + '">';
                 html += d.getDate();
                 html += '</button>';
@@ -282,22 +301,28 @@
         const months = Math.max(1, parseInt(opts.months || 1, 10));
 
         let html = '';
-        // Moderner, neutraler Panel‑Look (keine Card)
-        // Inline: noch reduzierter (keine Border/Shadow)
-        var panelCls = opts.inline ? 'bg-transparent p-2' : 'bg-body border rounded-3 shadow p-2';
+        // Modern, neutral panel look (no card)
+        // Inline: minimal look; also shrink-to-content via d-inline-block (no unnecessary right whitespace)
+        // Dropdown: inline-block so width follows content (month tiles) and avoids unused right whitespace
+        var panelCls = opts.inline ? 'bg-transparent p-2 d-inline-block' : 'bg-body border rounded-3 shadow p-2 d-inline-block';
         html += '<div class="' + panelCls + '">';
-        // Kompakter Header: einzeilig mit drei Zonen
+        // Compact header: single row with three zones
         html += '  <div class="d-flex align-items-center justify-content-between gap-2 pb-2' + (opts.inline ? '' : ' border-bottom') + '">';
-        // Links: PrevYear / Prev
+        // Left: PrevYear / Prev
         html += '    <div class="d-flex align-items-center gap-1">';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prevYear" title="Previous year" aria-label="Previous year"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prev" title="Previous month" aria-label="Previous month"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
         html += '    </div>';
-        // Mitte: Titel
+        // Center: title (navigation – keep short format to stay compact)
         html += '    <div class="text-center flex-grow-1">';
-        html += '      <div class="small fw-semibold text-capitalize">' + getMonthYearTitle(current, opts.locale) + (months > 1 ? ' … ' + getMonthYearTitle(addMonths(current, months - 1), opts.locale) : '') + '</div>';
+        (function(){
+            const fmtShort = new Intl.DateTimeFormat(opts.locale, { month: 'short', year: 'numeric' });
+            const titleLeft = fmtShort.format(current);
+            const titleRight = months > 1 ? fmtShort.format(addMonths(current, months - 1)) : '';
+            html += '      <div class="small fw-semibold text-capitalize">' + titleLeft + (months > 1 ? ' … ' + titleRight : '') + '</div>';
+        })();
         html += '    </div>';
-        // Rechts: Next / NextYear / Today / Clear als Icons
+        // Right: Next / NextYear / Today / Clear as icons
         html += '    <div class="d-flex align-items-center gap-1">';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="next" title="Next month" aria-label="Next month"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="nextYear" title="Next year" aria-label="Next year"><i class="' + (opts.icons && (opts.icons.nextYear || opts.icons.next) || $.bsDatepicker.default.icons.nextYear) + '"></i></button>';
@@ -306,7 +331,7 @@
         html += '    </div>';
         html += '  </div>';
         html += '  <div class="pt-2">';
-        // Inline: kleine Textausgabe der aktuellen Auswahl innerhalb des Panels
+        // Inline: small textual output of the current selection inside the panel
         if (opts.inline) {
             const isRange = !!opts.range;
             const dispOpts = $.extend({}, opts, { format: 'locale' });
@@ -319,19 +344,22 @@
             }
             const placeholder = opts.placeholder;
             const clsMuted = text ? '' : ' text-muted';
-            // Inline: dezente Auswahlzeile
+            // Inline: subtle one-line selection summary
             html += '    <div class="mb-2 small text-center dp-inline-output' + clsMuted + '">' + (text || placeholder) + '</div>';
         }
-        // Maximal 2 Monate pro Zeile: engeres Spacing
-        html += '    <div class="row g-2">';
+        // Month tiles: fixed width, flex-wrap and capped total width for two columns
+        // Goal: show two months side-by-side when space allows; on narrow screens auto-wrap to one column
+        // gap-2 equals .5rem in Bootstrap → total ≈ 300px + .5rem + 300px
+        const monthsWrapStyle = (months > 1)
+            ? 'max-width: calc(600px + .5rem)'
+            : 'max-width: 100%';
+        // Left-align tiles per row (no centering) so with 3 months the third starts left on the next line
+        html += '    <div class="dp-months d-inline-flex flex-wrap align-items-start gap-2" style="' + monthsWrapStyle + '">';
         for (let i = 0; i < months; i++) {
-            html += '      <div class="col-auto">';
+            // Fixed tile width and flex-basis so items do not stretch
+            html += '      <div class="dp-month" style="width:300px; flex:0 0 300px">';
             html += renderOneMonthBlock(addMonths(current, i), state);
             html += '      </div>';
-            // Umbruch nach jedem zweiten Monat (2 Spalten pro Zeile)
-            if (i % 2 === 1 && i < months - 1) {
-                html += '      <div class="w-100"></div>';
-            }
         }
         html += '    </div>';
         html += '  </div>';
@@ -346,78 +374,97 @@
             e.preventDefault();
             state.current = addMonths(state.current, -1);
             updatePanel(state);
+            emit(state, 'navigate', { action: 'prev', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="prevYear"]', function (e) {
             e.preventDefault();
             state.current = addMonths(state.current, -12);
             updatePanel(state);
+            emit(state, 'navigate', { action: 'prevYear', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="next"]', function (e) {
             e.preventDefault();
             state.current = addMonths(state.current, +1);
             updatePanel(state);
+            emit(state, 'navigate', { action: 'next', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="nextYear"]', function (e) {
             e.preventDefault();
             state.current = addMonths(state.current, +12);
             updatePanel(state);
+            emit(state, 'navigate', { action: 'nextYear', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="today"]', function (e) {
             e.preventDefault();
             const t = new Date();
             state.current = new Date(t.getFullYear(), t.getMonth(), 1);
             updatePanel(state);
+            emit(state, 'navigate', { action: 'today', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="clear"]', function (e) {
             e.preventDefault();
-            // Auswahl löschen
+            // Clear selection
             state.rangeStart = null;
             state.selected = null;
-            // Anzeige/Hidden-Inputs leeren
+            // Clear visible display / hidden inputs
             if (state.$display) updateDisplay(state);
             if (state.$inStart) state.$inStart.val('').trigger('change');
             if (state.$inEnd) state.$inEnd.val('').trigger('change');
             if (state.$input && !state.$display) state.$input.val('').trigger('change');
             updatePanel(state);
+            emit(state, 'clear', {});
+            emit(state, 'changeDate', { value: opts.range ? [null, null] : null });
         });
         $panel.on('click.' + NS, '[data-action="pick"]', function (e) {
             e.preventDefault();
             const stamp = $(this).data('date');
             const d = startOfDay(new Date(typeof stamp === 'number' ? stamp : Number(stamp)));
-            if (isDisabledDate(d, state)) return; // ignore disabled
+            if (isDisabledDate(d, state)) return; // ignore disabled days
             if (opts.range) {
                 const S = state.rangeStart;
                 const E = state.selected;
 
+                // Case 3 (toggle off): clicking exactly on current start or end clears that edge
+                if (S && isSameDay(d, S)) {
+                    state.rangeStart = null; // remove start
+                    // keep end as-is; next click will define a new start
+                    updatePanel(state);
+                    return;
+                }
+                if (E && isSameDay(d, E)) {
+                    state.selected = null; // remove end
+                    // If next click is before the remaining start, we will swap accordingly below
+                    updatePanel(state);
+                    return;
+                }
+
                 if (!S && !E) {
-                    // noch keine Auswahl → Start setzen
+                    // No selection yet → set start
                     state.rangeStart = d;
                     state.selected = null;
                     updatePanel(state);
                 } else if (S && !E) {
-                    // Start gewählt, Ende offen
+                    // Start picked, end open
                     if (d < S) {
-                        // vor Start → Start verschieben
-                        state.rangeStart = d;
-                        updatePanel(state);
+                        // Click before current start → interpret as new start (swap behavior)
+                        state.selected = S; // previous start becomes end
+                        state.rangeStart = d; // new start
                     } else {
-                        // gleich oder nach Start → Ende setzen (aber Dropdown offen lassen für Feintuning)
+                        // After (or same day) → set as end
                         state.selected = d;
-                        // Werte aktualisieren (Anzeige + Hidden)
-                        // Panel bleibt offen für Feintuning
-                        // Kein Auto-Close beim erstmaligen Setzen des Endes, um direktes Nachjustieren zu erlauben
-                        updatePanel(state);
                     }
+                    // Keep dropdown open for fine-tuning
+                    updatePanel(state);
                 } else if (S && E) {
-                    // kompletter Bereich vorhanden → immer den näheren Rand verschieben (Variante B)
+                    // Complete range present → move the nearer edge
                     if (d <= S) {
-                        // Klick links/gleich Start → Start wird D
+                        // Click left/equal start → start becomes D
                         state.rangeStart = d;
                     } else if (d >= E) {
-                        // Klick rechts/gleich Ende → Ende wird D
+                        // Click right/equal end → end becomes D
                         state.selected = d;
                     } else {
-                        // Klick innerhalb (S < D < E): näheren Rand verschieben
+                        // Click inside (S < D < E): move nearer edge
                         const distToStart = d - S;
                         const distToEnd = E - d;
                         if (distToStart <= distToEnd) {
@@ -426,14 +473,16 @@
                             state.selected = d;
                         }
                     }
-                    // Werte aktualisieren (Anzeige + Hidden)
-                    // Hinweis: Bei bestehender Range (Anpassung) NICHT automatisch schließen,
-                    // damit feines Justieren möglich bleibt. Nur bei erstmaligem Setzen des Endes (oben) wird geschlossen.
+                    // Update values (display + hidden)
+                    // Note: Do NOT auto-close when adjusting an existing range to allow fine tuning.
                     updatePanel(state);
                 }
+                // Emit changeDate for any pick in range mode (edge moved or set)
+                const [a, b] = clampRange(state.rangeStart, state.selected);
+                emit(state, 'changeDate', { value: [a || null, b || null] });
             } else {
                 state.selected = d;
-                // Werte aktualisieren (Anzeige + Hidden)
+                // Update values (display + hidden)
                 if (state.$display || state.$inStart) {
                     const toLocalISO = (x) => x ? (function(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; })(x) : '';
                     if (state.$inStart) state.$inStart.val(toLocalISO(state.selected)).trigger('change');
@@ -443,6 +492,7 @@
                 }
                 if (!opts.inline && opts.autoClose) hideDropdown(state);
                 updatePanel(state);
+                emit(state, 'changeDate', { value: state.selected });
             }
         });
     }
@@ -450,14 +500,25 @@
     function updatePanel(state) {
         const html = renderTemplate(state);
         state.$panel.html(html);
-        // Nach jedem Render die aktuellen Werte in Anzeige/Hidden spiegeln
-        // (z. B. nach Clear oder externer setDate-Nutzung)
+        emit(state, 'render', { current: new Date(state.current), range: !!state.opts.range });
+        // After each render mirror the current values into display/hidden inputs
+        // (e.g. after clear or external setDate usage)
         (function syncOutputs() {
             const isRange = !!state.opts.range;
             const dispOpts = $.extend({}, state.opts, { format: 'locale' });
             const toLocalISO = (d) => d ? (function(x){ const y=x.getFullYear(); const m=String(x.getMonth()+1).padStart(2,'0'); const day=String(x.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; })(d) : '';
             if (isRange) {
-                const [a, b] = clampRange(state.rangeStart, state.selected);
+                // Mirror single-edge ranges into both inputs:
+                // - Only start set  -> end mirrors start
+                // - Only end set    -> start mirrors end
+                // - Both set        -> clamp to [start, end]
+                const S = state.rangeStart;
+                const E = state.selected;
+                let a = S || null, b = E || null;
+                if (S && !E) { b = S; }
+                else if (!S && E) { a = E; }
+                else if (S && E) { const pair = clampRange(S, E); a = pair[0]; b = pair[1]; }
+
                 if (state.$display) updateDisplay(state);
                 if (state.$inStart) state.$inStart.val(toLocalISO(a));
                 if (state.$inEnd) state.$inEnd.val(toLocalISO(b));
@@ -470,7 +531,7 @@
             }
         })();
         attachEvents(state);
-        // Wenn als Dropdown sichtbar: Breite exakt an den Inhalt bzw. an gewünschte Maximalbreite anpassen
+        // If dropdown is visible: set width exactly to content or desired max width
         if (!state.opts.inline && state.$container && state.$container.is(':visible')) {
             applyCalculatedWidth(state);
         }
@@ -485,8 +546,9 @@
             .css({ position: 'absolute', top: off.top + h + 4, left: off.left, zIndex: state.opts.zIndex, width: 'auto' })
             .addClass('show')
             .show();
-        // Nach dem Anzeigen Breite berechnen und setzen
+        // After showing, calculate and set width
         applyCalculatedWidth(state);
+        emit(state, 'show', {});
         $(document).on('mousedown.' + NS, function (ev) {
             const $t = $(ev.target);
             if ($t.closest(state.$container).length === 0 && $t.closest($anchor).length === 0) {
@@ -495,23 +557,23 @@
         });
     }
 
-    // Berechnet eine sinnvolle maximale Breite anhand der Monatsblöcke:
-    // - Bei 1 Monat: Breite = Breite dieses Monats + horizontaler Innenabstand
-    // - Bei >=2 Monaten: Breite = Summe der ersten beiden Monatsbreiten + Gap zwischen ihnen + Innenabstände
+    // Calculate a sensible max width based on month blocks:
+    // - For 1 month: width = width of that month + horizontal padding
+    // - For >= 2 months: width = sum of first two months + gap + padding
     function applyCalculatedWidth(state) {
         const $card = state.$panel.children('.card');
         if ($card.length === 0) return;
         const $body = $card.children('.card-body');
-        // Padding der Card-Body (hält Monats-Wrapper)
+        // Padding of the card body (contains the months wrapper)
         let bodyPaddingX = 0;
         if ($body.length) {
             const bs = getComputedStyle($body[0]);
             bodyPaddingX = (parseFloat(bs.paddingLeft) || 0) + (parseFloat(bs.paddingRight) || 0);
         }
-        // Monats-Wrapper (erste Ebene im Body)
+        // Months wrapper (first child in body)
         const $wrap = $body.children().first();
         if ($wrap.length === 0) return;
-        // Ermittele Monats-Elemente je nach Layout (Grid: .col-auto, Flex: .d-inline-block)
+        // Find month elements depending on layout (grid: .col-auto, flex: .d-inline-block)
         let $months = $wrap.children('.col-auto');
         if ($months.length === 0) {
             $months = $wrap.children('.d-inline-block');
@@ -521,28 +583,29 @@
         let monthsWidth = m0;
         if ($months.length >= 2) {
             const m1 = $months.eq(1).outerWidth(true);
-            // Bei Bootstrap Grid ist der Abstand bereits in den Spaltenbreiten (Padding) enthalten,
-            // daher keine zusätzliche Gap‑Addition notwendig.
+            // In Bootstrap grid the spacing is already in the column widths (padding),
+            // so no extra gap addition necessary.
             monthsWidth = m0 + m1;
         }
-        // Zielbreite: strikt Monats-Summe + Body-Padding (Header darf umbrechen)
+        // Target width: strictly month sum + body padding (header may wrap)
         const targetWidth = monthsWidth + bodyPaddingX;
-        // Card selbst auf die Zielbreite setzen, damit keine innere 100%-Weite sie aufzieht
+        // Set card itself to the target width so no inner 100% stretches it
         $card.css('width', Math.ceil(targetWidth + 1) + 'px');
-        // Container exakt an die Card anpassen
+        // Match container exactly to card width
         state.$container.css({ width: Math.ceil(targetWidth + 1) + 'px' });
     }
     function hideDropdown(state) {
         if (state.opts.inline) return; // no-op
         state.$container.removeClass('show').hide();
-        // Input-Blur verhindert, dass ein Focus-Event das Dropdown sofort erneut öffnet
+        // Blur prevents a focus event from immediately reopening the dropdown
         const $anchor = state.$anchor || state.$input;
         if ($anchor && $anchor.length) {
             $anchor.trigger('blur');
         }
-        // kurze Unterdrückung des erneuten Öffnens (z. B. durch Click-/Focus-Sequenzen)
+        // short suppression to avoid immediate reopen (e.g. click/focus sequences)
         state.suppressOpenUntil = Date.now() + 150;
         $(document).off('mousedown.' + NS);
+        emit(state, 'hide', {});
     }
 
     function create(state) {
@@ -553,21 +616,22 @@
         state.rangeStart = null;    // range start
 
         if (opts.inline) {
-            // Inline direkt IM Wrapper rendern
-            state.$container = $('<div class="bs-datepicker inline"></div>').appendTo(state.$root);
+            // Render inline directly inside the wrapper
+            // Use form-control styling but avoid taking full width: make it inline-block and width auto
+            state.$container = $('<div class="bs-datepicker inline form-control p-2 d-inline-block w-auto"></div>').appendTo(state.$root);
         } else {
-            // --bs-dropdown-min-width standardmäßig 10rem → für inhaltsbreite Dropdowns auf auto setzen
+            // --bs-dropdown-min-width defaults to 10rem → set to auto for content-width dropdowns
             state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto;"></div>').appendTo('body');
         }
         state.$panel = $('<div></div>').appendTo(state.$container);
         updatePanel(state);
-        // Defensiv: sicherstellen, dass das Dropdown initial geschlossen ist
+        // Defensive: ensure dropdown is closed initially
         if (!opts.inline) {
             state.$container.removeClass('show').hide();
         }
 
         if (!opts.inline) {
-            // Öffnen nur auf Click, nicht auf Focus (verhindert Re-Open direkt nach Blur)
+            // Open only on click, not on focus (prevents reopen directly after blur)
             const $anchor = state.$anchor || state.$input;
             if ($anchor && $anchor.length) {
                 $anchor.on('click.' + NS, function () {
@@ -575,7 +639,7 @@
                     if (state.suppressOpenUntil && Date.now() < state.suppressOpenUntil) return;
                     showDropdown(state);
                 });
-                // Tastatur-Support: Enter/Leertaste öffnet Dropdown
+                // Keyboard support: Enter/Space opens dropdown
                 $anchor.on('keydown.' + NS, function (ev) {
                     const key = ev.key || ev.code;
                     if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
@@ -587,6 +651,7 @@
                 });
             }
         }
+        emit(state, 'init', { range: !!state.opts.range, inline: !!opts.inline, months: opts.months });
     }
 
     function destroy(state) {
@@ -597,6 +662,7 @@
         const $dataEl = state.containerMode ? state.$root : state.$input;
         if ($dataEl) $dataEl.removeData(NS);
         $(document).off('.' + NS);
+        emit(state, 'destroy', {});
     }
 
     const methods = {
@@ -656,8 +722,12 @@
                 }
                 state.rangeStart = a1 ? toDateOrNull(a1) : null;
                 state.selected = b1 ? toDateOrNull(b1) : null;
+                // Prevent disabled dates from being set via API
+                if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
+                if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
             } else {
                 state.selected = a ? toDateOrNull(a) : null;
+                if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
             }
             updatePanel(state);
             return this;
@@ -668,8 +738,12 @@
             if (Array.isArray(dateOrRange)) {
                 state.rangeStart = dateOrRange[0] ? startOfDay(new Date(dateOrRange[0])) : null;
                 state.selected = dateOrRange[1] ? startOfDay(new Date(dateOrRange[1])) : null;
+                // Prevent disabled dates from being set via API
+                if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
+                if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
             } else if (dateOrRange) {
                 state.selected = startOfDay(new Date(dateOrRange));
+                if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
             } else {
                 state.selected = null; state.rangeStart = null;
             }
@@ -700,21 +774,21 @@
         }
         const opts = $.extend({}, $.bsDatepicker.default, optionsOrMethod || {});
 
-        // Unterstütze zwei Modi:
-        // 1) Legacy: Direkt auf einem sichtbaren <input> initialisiert
-        // 2) Container: Auf einem Wrapper (z. B. <div class="datepicker">) mit 1–2 hidden Inputs initialisiert
+        // Support two modes:
+        // 1) Legacy: initialized directly on a visible <input>
+        // 2) Container: initialized on a wrapper (e.g. <div class="datepicker">) with 1–2 hidden inputs inside
         const isDirectInput = $element.is('input, textarea');
 
-        // State-Grundstruktur
+        // Base state structure
         const state = {
-            $input: null,             // Legacy sichtbares Eingabefeld (Direkt-Input)
-            $root: $element,          // Ursprüngliches Initialisierungs-Element
-            $anchor: null,            // Element, an dem Dropdown verankert wird (Input oder Anzeige-Input)
-            $display: null,           // Sichtbarer Anzeige-Wrapper (Container-Modus)
-            $displayText: null,       // Text-Span innerhalb der Anzeige
-            $inStart: null,           // Hidden Start (Range) oder Single
-            $inEnd: null,             // Hidden Ende (Range)
-            containerMode: false,     // true wenn auf Wrapper mit hidden Inputs
+            $input: null,             // Legacy visible input element (direct input)
+            $root: $element,          // Original initialization element
+            $anchor: null,            // Anchor element for dropdown (input or display wrapper)
+            $display: null,           // Visible display wrapper (container mode)
+            $displayText: null,       // Text span inside display
+            $inStart: null,           // Hidden start (range) or single
+            $inEnd: null,             // Hidden end (range)
+            containerMode: false,     // true when initialized on wrapper with hidden inputs
             opts,
             $container: null,
             $panel: null,
@@ -726,30 +800,30 @@
 
         function initBindings() {
             if (isDirectInput) {
-                // Legacy-Verwendung: alles wie bisher
+                // Legacy usage: keep behavior
                 state.$input = $element;
                 state.$anchor = state.$input;
                 state.containerMode = false;
             } else {
-                // Container-Modus: suche Inputs im Wrapper
+                // Container mode: find inputs inside wrapper
                 const $inputs = state.$root.find('input');
-                // Bevorzugt hidden, sonst beliebige
+                // Prefer hidden, otherwise any inputs
                 const $hidden = $inputs.filter('[type="hidden"]');
                 const list = $hidden.length ? $hidden : $inputs;
                 if (list.length >= 1) state.$inStart = $(list[0]);
                 if (list.length >= 2) state.$inEnd = $(list[1]);
 
-                // Range automatisch aus Anzahl Inputs ableiten
+                // Derive range from number of inputs
                 if (list.length >= 2) state.opts.range = true; else state.opts.range = false;
 
-                // Inline hat KEINEN sichtbaren Ausgabe-Wrapper, da die Kalender inline sind
+                // Inline has NO visible display wrapper; calendars are rendered inline
                 if (state.opts.inline) {
                     state.$display = null;
                     state.$displayText = null;
-                    state.$anchor = null; // kein Dropdown-Anker nötig
+                    state.$anchor = null; // no dropdown anchor needed
                     state.containerMode = true;
                 } else {
-                    // Sichtbarer Anzeige-Wrapper (kein Input) mit Text + Icon erzeugen (nur Dropdown)
+                    // Create visible display wrapper (no input) with text + icon (dropdown only)
                     const cls = state.opts.classes || {};
                     const dispCls = (cls.display || $.bsDatepicker.default.classes.display || '').trim();
                     const textCls = (cls.displayText || $.bsDatepicker.default.classes.displayText || '').trim();
@@ -765,27 +839,26 @@
             }
         }
 
-        // keine separate setOutputs mehr nötig, Synchronisierung erfolgt in updatePanel()
+        // No separate setOutputs required, synchronization happens in updatePanel()
 
         initBindings();
 
-        // State im Element speichern (auf dem Anker, damit Methoden-Aufrufe weiterhin funktionieren)
+        // Store state on the element (on anchor so method calls keep working)
         (state.containerMode ? state.$root : state.$input).data(NS, state);
 
-        // create() erwartet state.$input (für Legacy) – für Container spielt nur $anchor eine Rolle
+        // create() expects state.$input (legacy) – for container only $anchor matters
         if (!state.containerMode) {
             state.$input = state.$anchor;
         }
 
-        // Erstellen mit den angepassten globalen Funktionen
-        // Disabled-Konfiguration vorbereiten
+        // Prepare disabled configuration and create
         state.disabled = normalizeDisabled(state.opts.disabled);
         create(state);
 
         return (state.containerMode ? state.$root : state.$input);
     };
 
-    // Hilfsfunktion: Anzeige-Text im Wrapper aktualisieren
+    // Helper: update the text within the visible display wrapper
     function updateDisplay(state) {
         if (!state.$display) return;
         const isRange = !!state.opts.range;
@@ -798,7 +871,7 @@
             text = formatDateValue(state.selected, dispOpts);
         }
         const placeholder = state.opts.placeholder;
-        // Falls kein spezielles Text-Element vorhanden (Legacy-Fall), setze Titel als Fallback
+        // If no dedicated text element exists (legacy), set text on wrapper as fallback
         if (state.$displayText && state.$displayText.length) {
             state.$displayText.text(text || placeholder);
             state.$display.toggleClass('text-muted', !text);
@@ -807,22 +880,36 @@
         }
     }
 
-    // Methoden erweitern: setDisableDates / getDisableDates / setMin / setMax / clearDisableDates
+    // Extend methods: setDisableDates / getDisableDates / setMin / setMax / clearDisableDates / setLocale
     const _old = $.fn.bsDatepicker;
     $.fn.bsDatepicker = function (optionsOrMethod) {
         if (typeof optionsOrMethod === 'string') {
             const args = Array.prototype.slice.call(arguments, 1);
+            if (optionsOrMethod === 'setLocale') {
+                return this.each(function () {
+                    const $el = $(this);
+                    const state = $el.data(NS) || $el.find('.dp-display').data(NS) || $el.data(NS);
+                    if (!state) return;
+                    const newLocale = args[0];
+                    if (typeof newLocale === 'string' && newLocale.trim()) {
+                        state.opts.locale = newLocale.trim();
+                        updatePanel(state);
+                        emit(state, 'setLocale', { locale: state.opts.locale });
+                    }
+                });
+            }
             if (optionsOrMethod === 'setDisableDates') {
                 return this.each(function () {
                     const $el = $(this);
                     const state = $el.data(NS) || $el.find('.dp-display').data(NS) || $el.data(NS);
                     if (!state) return;
                     state.disabled = normalizeDisabled(args[0] || null);
-                    // Auswahl bereinigen, wenn nötig
+                    // Purge selection if it became invalid
                     const purge = function (d) { return d && isDisabledDate(d, state) ? null : d; };
                     state.selected = purge(state.selected);
                     state.rangeStart = purge(state.rangeStart);
                     updatePanel(state);
+                    emit(state, 'setDisableDates', { disabled: state.disabled });
                 });
             }
             if (optionsOrMethod === 'getDisableDates') {
@@ -834,22 +921,42 @@
                 return this.each(function () {
                     const state = $(this).data(NS);
                     if (!state) return;
-                    const cfg = $.extend({}, state.disabled, { min: toDateOrNull(arguments.length > 1 ? arguments[1] : args[0]) });
+                    const newMin = toDateOrNull(args[0]);
+                    // Preserve all existing disabled rules, including individual dates
+                    const cfg = {
+                        before: state.disabled ? state.disabled.before : null,
+                        after: state.disabled ? state.disabled.after : null,
+                        min: newMin,
+                        max: state.disabled ? state.disabled.max : null,
+                        dates: state.disabled && state.disabled.datesSet ? Array.from(state.disabled.datesSet).map(function (t) { return new Date(t); }) : []
+                    };
                     state.disabled = normalizeDisabled(cfg);
+                    // Purge now-invalid selections
                     state.selected = (state.selected && isDisabledDate(state.selected, state)) ? null : state.selected;
                     state.rangeStart = (state.rangeStart && isDisabledDate(state.rangeStart, state)) ? null : state.rangeStart;
                     updatePanel(state);
+                    emit(state, 'setMin', { min: state.disabled.min || null });
                 });
             }
             if (optionsOrMethod === 'setMax') {
                 return this.each(function () {
                     const state = $(this).data(NS);
                     if (!state) return;
-                    const cfg = $.extend({}, state.disabled, { max: toDateOrNull(arguments.length > 1 ? arguments[1] : args[0]) });
+                    const newMax = toDateOrNull(args[0]);
+                    // Preserve all existing disabled rules, including individual dates
+                    const cfg = {
+                        before: state.disabled ? state.disabled.before : null,
+                        after: state.disabled ? state.disabled.after : null,
+                        min: state.disabled ? state.disabled.min : null,
+                        max: newMax,
+                        dates: state.disabled && state.disabled.datesSet ? Array.from(state.disabled.datesSet).map(function (t) { return new Date(t); }) : []
+                    };
                     state.disabled = normalizeDisabled(cfg);
+                    // Purge now-invalid selections
                     state.selected = (state.selected && isDisabledDate(state.selected, state)) ? null : state.selected;
                     state.rangeStart = (state.rangeStart && isDisabledDate(state.rangeStart, state)) ? null : state.rangeStart;
                     updatePanel(state);
+                    emit(state, 'setMax', { max: state.disabled.max || null });
                 });
             }
             if (optionsOrMethod === 'clearDisableDates') {
@@ -858,10 +965,11 @@
                     if (!state) return;
                     state.disabled = normalizeDisabled(null);
                     updatePanel(state);
+                    emit(state, 'clearDisableDates', {});
                 });
             }
         }
-        // Fallback: normale Initialisierung
+        // Fallback: normal initialization
         return _old.apply(this, arguments);
     };
 
