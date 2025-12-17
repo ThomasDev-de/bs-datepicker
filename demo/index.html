@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,12 +17,47 @@
                 <div class="datepicker" id="singleDropdown">
                     <input type="hidden" name="single">
                 </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPast">Lock past</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFuture">Lock future</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnHolidays">Lock holidays</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDisableDates">Test window</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearDis">Clear locks</button>
+                </div>
             </div>
             <div class="col-md-6">
-                <h5>Range Inline (2 Monate)</h5>
+                <h5>Range Inline (2 months)</h5>
                 <div class="datepicker" id="rangeInline">
                     <input type="hidden" name="range_start">
                     <input type="hidden" name="range_end">
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional examples -->
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <h5>Single Inline (with val)</h5>
+                <div class="datepicker" id="singleInline">
+                    <input type="hidden" name="single_inline">
+                </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetTodayInline">Set today</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadInline">Read value</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearInline">Clear</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5>Range (Dropdown) with min/max + val</h5>
+                <div class="datepicker" id="rangeDropdown">
+                    <input type="hidden" name="rd_start">
+                    <input type="hidden" name="rd_end">
+                </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetQ1">Set Q1 2025</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadRange">Read value</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearRange">Clear</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnYear2025">Allow only 2025</button>
                 </div>
             </div>
         </div>
@@ -37,27 +72,106 @@
 
 <script src="../vendor/components/jquery/jquery.min.js"></script>
 <script src="../vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../dist/bs-datepicker.js"></script>
-<script>
-    $(function () {
-        // Single (Dropdown) – Input hidden, Anzeige wird erzeugt
-        $('#singleDropdown').bsDatepicker({inline: false});
-
-        // Range Inline mit 2 Monaten (sichtbar)
-        $('#rangeInline').bsDatepicker({inline: true, months: 2});
-
-        // Demo-Form Submit → Alert mit Form-Werten
-        $('#demoForm').on('submit', function (e) {
-            e.preventDefault();
-            const data = $(this).serializeArray();
-            const values = {};
-            data.forEach(function (item) {
-                values[item.name] = item.value;
+    <script src="../dist/bs-datepicker.js"></script>
+    <script>
+        $(function () {
+            // Single (Dropdown) – hidden input, visible display is created by the plugin
+            $('#singleDropdown').bsDatepicker({
+                inline: false,
+                locale: 'en-US',
+                placeholder: 'Pick a date',
+                disabled: { dates: [] }
             });
-            alert('Form values:\n' + JSON.stringify(values, null, 2));
+
+            // Range inline with 3 months (visible)
+            const today = new Date();
+            $('#rangeInline').bsDatepicker({
+                inline: true,
+                locale: 'en-US',
+                months: 3,
+                placeholder: 'Select a period',
+                disabled: { min: today }
+            });
+
+            // Single inline – direct inline calendar with val()
+            $('#singleInline').bsDatepicker({
+                inline: true,
+                locale: 'en-US',
+                placeholder: 'Pick a date (inline)',
+                startOnSunday: true
+            });
+
+            // Range (Dropdown) with min/max – val() examples
+            $('#rangeDropdown').bsDatepicker({
+                inline: false,
+                locale: 'en-US',
+                months: 2,
+                placeholder: 'Range (Dropdown)',
+                disabled: { min: '2025-01-01', max: '2025-12-31' }
+            });
+
+            // Demo form submit → alert form values
+            $('#demoForm').on('submit', function (e) {
+                e.preventDefault();
+                const data = $(this).serializeArray();
+                const values = {};
+                data.forEach(function (item) {
+                    values[item.name] = item.value;
+                });
+                alert('Form values:\n' + JSON.stringify(values, null, 2));
+            });
+
+            // Buttons: live toggle disabled dates
+            $('#btnDisableDates').on('click', function(){
+                $('#rangeInline').bsDatepicker('setDisableDates', {
+                    min: '2025-12-15',
+                    max:  '2025-12-21'
+                });
+            });
+            // Buttons: live disabled presets
+            $('#btnPast').on('click', function(){
+                $('#singleDropdown').bsDatepicker('setDisableDates', { before: new Date() });
+            });
+            $('#btnFuture').on('click', function(){
+                // Lock the future starting today (inclusive)
+                var today = new Date();
+                $('#singleDropdown').bsDatepicker('setDisableDates', { after: today });
+            });
+            $('#btnHolidays').on('click', function(){
+                $('#singleDropdown').bsDatepicker('setDisableDates', { dates: ['2025-12-24', '2025-12-25', '2026-01-01'] });
+            });
+            $('#btnClearDis').on('click', function(){
+                $('#singleDropdown').bsDatepicker('clearDisableDates');
+            });
+
+            // Buttons: single inline val()
+            $('#btnSetTodayInline').on('click', function(){
+                $('#singleInline').bsDatepicker('val', new Date());
+            });
+            $('#btnReadInline').on('click', function(){
+                var v = $('#singleInline').bsDatepicker('val');
+                alert('Single inline value: ' + v);
+            });
+            $('#btnClearInline').on('click', function(){
+                $('#singleInline').bsDatepicker('val', null);
+            });
+
+            // Buttons: range (dropdown) val() + min/max demo
+            $('#btnSetQ1').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('val', '2025-01-01', '2025-03-31');
+            });
+            $('#btnReadRange').on('click', function(){
+                var r = $('#rangeDropdown').bsDatepicker('val');
+                alert('Range dropdown value: [' + r[0] + ', ' + r[1] + ']');
+            });
+            $('#btnClearRange').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('val', null, null);
+            });
+            $('#btnYear2025').on('click', function(){
+                $('#rangeDropdown').bsDatepicker('setDisableDates', { min: '2025-01-01', max: '2025-12-31' });
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
 

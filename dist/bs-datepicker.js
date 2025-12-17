@@ -12,9 +12,13 @@
             separator: ' – ',           // range separator for text output
             zIndex: 1080,               // for dropdown panel
             months: 1,                  // number of months to render side by side
+            // Visual Theme: previously configurable; now always uses a subtle Bootstrap-based highlighting
             icons: {                    // Bootstrap Icons class names
+                prevYear: 'bi bi-chevron-double-left',
                 prev: 'bi bi-chevron-left',
+                today: 'bi bi-record-circle',
                 next: 'bi bi-chevron-right',
+                nextYear: 'bi bi-chevron-double-right',
                 clear: 'bi bi-x-lg'
             },
             // CSS-Klassen für die sichtbare Anzeige (kein Input mehr)
@@ -22,7 +26,13 @@
                 display: 'form-control d-flex align-items-center justify-content-between',
                 displayText: '',
                 displayIcon: 'bi bi-calendar-event'
-            }
+            },
+            placeholder: 'Select period',
+            // Disabled dates configuration
+            // Forms:
+            // - disabled: { before?: Date|string, after?: Date|string, min?: Date|string, max?: Date|string, dates?: (Date|string)[] }
+            // Note: before => disables <= before, after => disables >= after
+            disabled: null
         }
     };
 
@@ -53,6 +63,49 @@
         if (!a || !b) return false;
         const [s, e] = clampRange(a, b);
         return d >= startOfDay(s) && d <= startOfDay(e);
+    }
+
+    function toDateOrNull(v) {
+        if (!v) return null;
+        if (v instanceof Date) return startOfDay(v);
+        if (typeof v === 'number') return startOfDay(new Date(v));
+        if (typeof v === 'string') {
+            // Expect ISO YYYY-MM-DD; fallback to Date parse
+            const parts = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            let d = parts ? new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3])) : new Date(v);
+            if (isNaN(d.getTime())) return null;
+            return startOfDay(d);
+        }
+        return null;
+    }
+
+    function normalizeDisabled(cfg) {
+        if (!cfg) return { before: null, after: null, min: null, max: null, datesSet: new Set() };
+        const out = { before: null, after: null, min: null, max: null, datesSet: new Set() };
+        if (cfg.before) out.before = toDateOrNull(cfg.before);
+        if (cfg.after) out.after = toDateOrNull(cfg.after);
+        if (cfg.min) out.min = toDateOrNull(cfg.min);
+        if (cfg.max) out.max = toDateOrNull(cfg.max);
+        if (Array.isArray(cfg.dates)) {
+            cfg.dates.forEach(function (x) {
+                const d = toDateOrNull(x);
+                if (d) out.datesSet.add(d.getTime());
+            });
+        }
+        return out;
+    }
+
+    function isDisabledDate(d, state) {
+        if (!state || !state.disabled) return false;
+        const dd = startOfDay(d);
+        const t = dd.getTime();
+        const dis = state.disabled;
+        if (dis.min && dd < dis.min) return true;
+        if (dis.max && dd > dis.max) return true;
+        if (dis.before && dd <= dis.before) return true;
+        if (dis.after && dd >= dis.after) return true;
+        if (dis.datesSet && dis.datesSet.has(t)) return true;
+        return false;
     }
     function getWeekdayNames(locale, startOnSunday) {
         const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
@@ -138,6 +191,8 @@
         const cells = buildCalendarGrid(currMonthDate, opts);
         const today = startOfDay(new Date());
         const isRange = !!opts.range;
+        // Theme is fixed to 'subtle' (option removed to keep options compact)
+        const theme = 'subtle';
 
         let html = '';
         html += '<div class="mb-2">';
@@ -177,22 +232,38 @@
                 // TD-Klassen: nur Padding entfernen, keine Farben/Rundungen auf TD
                 let tdCls = 'p-0'; // kein Space zwischen den Tagen
 
-                // Button-Klassen: Border weg, Basis ohne Rundung; Range komplett in Primärfarbe
-                // Einheitliche Tagesbreite: Button füllt Zelle (w-100), dadurch durchgehende Range ohne Lücken
+                // Button-Klassen: Basis ohne Rundung; breite Buttons füllen die Zelle
+                // Subtle highlighting (Bootstrap 5.3 Utilities)
                 let btnCls = 'btn btn-sm w-100 border-0 rounded-0 ';
                 const inRangeAny = isStart || isEnd || isBetween;
-                if (isSelected || inRangeAny) btnCls += 'btn-primary ';
-                else btnCls += ' ';
-                if (muted) btnCls += ' text-muted ';
-                // Heute-Markierung nur, wenn nicht primär, damit lesbar bleibt
-                if (isToday && !(isSelected || inRangeAny)) btnCls += ' text-danger fw-semibold ';
-                // Abrundung nur am linken Rand (Start) und rechten Rand (Ende) als Pill-Feeling
-                if (isStart) btnCls += ' rounded-0 ';
-                if (isEnd) btnCls += ' rounded-0 ';
 
+                // Subtle Theme (always on)
+                if (isRange) {
+                    if (inRangeAny) {
+                        // Zwischenbereich und Ränder: dezente Füllung
+                        btnCls += ' bg-primary-subtle text-primary-emphasis ';
+                    }
+                    if (isStart || isEnd) {
+                        // Ränder zusätzlich visuell markieren
+                        btnCls += ' border border-primary fw-semibold ';
+                    }
+                } else {
+                    if (isSelected) {
+                        // Single-Auswahl dezent mit Outline
+                        btnCls += ' btn-outline-primary text-primary-emphasis fw-semibold border ';
+                    }
+                }
+                if (muted) btnCls += ' text-muted ';
+                // Heute dezent, sofern nicht Teil der Auswahl
+                if (isToday && !(isSelected || inRangeAny)) btnCls += ' text-primary fw-semibold ';
+
+                const disabled = isDisabledDate(d, state);
                 html += '<td class="' + tdCls.trim() + '">';
                 // data-date als Millisekunden-Zeitstempel ablegen, um TZ-Parsing-Probleme zu vermeiden
-                html += '<button type="button" class="' + btnCls.trim() + '" data-action="pick" data-date="' + d.getTime() + '">';
+                const actionAttr = disabled ? '' : ' data-action="pick"';
+                const disAttr = disabled ? ' disabled aria-disabled="true"' : '';
+                const clsFinal = (btnCls + (disabled ? ' disabled ' : '')).trim();
+                html += '<button type="button" class="' + clsFinal + '"' + actionAttr + disAttr + ' data-date="' + d.getTime() + '">';
                 html += d.getDate();
                 html += '</button>';
                 html += '</td>';
@@ -211,19 +282,30 @@
         const months = Math.max(1, parseInt(opts.months || 1, 10));
 
         let html = '';
-        // Karte: keine feste Breite; tatsächliche Dropdown-Breite wird nach Render dynamisch gesetzt
-        html += '<div class="card shadow">';
-        html += '  <div class="card-header py-1 d-flex justify-content-between align-items-center">';
-        html += '    <div class="btn-group">';
-        html += '      <button type="button" class="btn btn-sm btn-light" data-action="prev"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
+        // Moderner, neutraler Panel‑Look (keine Card)
+        // Inline: noch reduzierter (keine Border/Shadow)
+        var panelCls = opts.inline ? 'bg-transparent p-2' : 'bg-body border rounded-3 shadow p-2';
+        html += '<div class="' + panelCls + '">';
+        // Kompakter Header: einzeilig mit drei Zonen
+        html += '  <div class="d-flex align-items-center justify-content-between gap-2 pb-2' + (opts.inline ? '' : ' border-bottom') + '">';
+        // Links: PrevYear / Prev
+        html += '    <div class="d-flex align-items-center gap-1">';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prevYear" title="Previous year" aria-label="Previous year"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prev" title="Previous month" aria-label="Previous month"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
         html += '    </div>';
-        html += '    <div class="fw-semibold text-capitalize">' + getMonthYearTitle(current, opts.locale) + (months > 1 ? ' … ' + getMonthYearTitle(addMonths(current, months - 1), opts.locale) : '') + '</div>';
-        html += '    <div class="btn-group">';
-        html += '      <button type="button" class="btn btn-sm btn-light" data-action="clear"><i class="' + (opts.icons && opts.icons.clear || $.bsDatepicker.default.icons.clear) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm btn-light" data-action="next"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
+        // Mitte: Titel
+        html += '    <div class="text-center flex-grow-1">';
+        html += '      <div class="small fw-semibold text-capitalize">' + getMonthYearTitle(current, opts.locale) + (months > 1 ? ' … ' + getMonthYearTitle(addMonths(current, months - 1), opts.locale) : '') + '</div>';
+        html += '    </div>';
+        // Rechts: Next / NextYear / Today / Clear als Icons
+        html += '    <div class="d-flex align-items-center gap-1">';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="next" title="Next month" aria-label="Next month"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="nextYear" title="Next year" aria-label="Next year"><i class="' + (opts.icons && (opts.icons.nextYear || opts.icons.next) || $.bsDatepicker.default.icons.nextYear) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="today" title="Today" aria-label="Today"><i class="' + (opts.icons && opts.icons.today || $.bsDatepicker.default.icons.today) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="clear" title="Clear" aria-label="Clear"><i class="' + (opts.icons && opts.icons.clear || $.bsDatepicker.default.icons.clear) + '"></i></button>';
         html += '    </div>';
         html += '  </div>';
-        html += '  <div class="card-body p-3">';
+        html += '  <div class="pt-2">';
         // Inline: kleine Textausgabe der aktuellen Auswahl innerhalb des Panels
         if (opts.inline) {
             const isRange = !!opts.range;
@@ -235,12 +317,13 @@
             } else {
                 text = formatDateValue(state.selected, dispOpts);
             }
-            const placeholder = isRange ? 'Zeitraum wählen' : 'Datum auswählen';
+            const placeholder = opts.placeholder;
             const clsMuted = text ? '' : ' text-muted';
-            html += '    <div class="mb-2 small dp-inline-output' + clsMuted + '">' + (text || placeholder) + '</div>';
+            // Inline: dezente Auswahlzeile
+            html += '    <div class="mb-2 small text-center dp-inline-output' + clsMuted + '">' + (text || placeholder) + '</div>';
         }
-        // Maximal 2 Monate pro Zeile: Grid ohne Stretch (je Zeile genau 2 Spalten)
-        html += '    <div class="row g-3">';
+        // Maximal 2 Monate pro Zeile: engeres Spacing
+        html += '    <div class="row g-2">';
         for (let i = 0; i < months; i++) {
             html += '      <div class="col-auto">';
             html += renderOneMonthBlock(addMonths(current, i), state);
@@ -264,9 +347,25 @@
             state.current = addMonths(state.current, -1);
             updatePanel(state);
         });
+        $panel.on('click.' + NS, '[data-action="prevYear"]', function (e) {
+            e.preventDefault();
+            state.current = addMonths(state.current, -12);
+            updatePanel(state);
+        });
         $panel.on('click.' + NS, '[data-action="next"]', function (e) {
             e.preventDefault();
             state.current = addMonths(state.current, +1);
+            updatePanel(state);
+        });
+        $panel.on('click.' + NS, '[data-action="nextYear"]', function (e) {
+            e.preventDefault();
+            state.current = addMonths(state.current, +12);
+            updatePanel(state);
+        });
+        $panel.on('click.' + NS, '[data-action="today"]', function (e) {
+            e.preventDefault();
+            const t = new Date();
+            state.current = new Date(t.getFullYear(), t.getMonth(), 1);
             updatePanel(state);
         });
         $panel.on('click.' + NS, '[data-action="clear"]', function (e) {
@@ -285,6 +384,7 @@
             e.preventDefault();
             const stamp = $(this).data('date');
             const d = startOfDay(new Date(typeof stamp === 'number' ? stamp : Number(stamp)));
+            if (isDisabledDate(d, state)) return; // ignore disabled
             if (opts.range) {
                 const S = state.rangeStart;
                 const E = state.selected;
@@ -508,6 +608,60 @@
             }
             return state.selected;
         },
+        // jQuery-like val():
+        // - Getter (no args):
+        //     single -> returns ISO string 'YYYY-MM-DD' or ''
+        //     range  -> returns [startISO, endISO] ('' when empty)
+        // - Setter:
+        //     single -> val(date)
+        //     range  -> val(start, end) or val([start, end])
+        // Accepts Date|string|null; strings should be ISO 'YYYY-MM-DD'.
+        val(a, b) {
+            const state = this.data(NS);
+            if (!state) return (arguments.length === 0 ? '' : this);
+
+            function toIso(d) {
+                if (!d) return '';
+                const y = d.getFullYear();
+                const m = ('0' + (d.getMonth() + 1)).slice(-2);
+                const dd = ('0' + d.getDate()).slice(-2);
+                return y + '-' + m + '-' + dd;
+            }
+
+            // Getter
+            if (arguments.length === 0) {
+                if (state.opts.range) {
+                    // Prefer hidden inputs if vorhanden (Container-Modus)
+                    if (state.$inStart || state.$inEnd) {
+                        const s = state.$inStart ? state.$inStart.val() : '';
+                        const e = state.$inEnd ? state.$inEnd.val() : '';
+                        return [s, e];
+                    }
+                    // Legacy/Direct: aus internem State als ISO ableiten
+                    return [toIso(state.rangeStart), toIso(state.selected)];
+                }
+                // Single
+                if (state.$inStart) {
+                    return state.$inStart.val();
+                }
+                return toIso(state.selected);
+            }
+
+            // Setter
+            if (state.opts.range) {
+                let a1 = a, b1 = b;
+                if (Array.isArray(a)) {
+                    a1 = a[0];
+                    b1 = a[1];
+                }
+                state.rangeStart = a1 ? toDateOrNull(a1) : null;
+                state.selected = b1 ? toDateOrNull(b1) : null;
+            } else {
+                state.selected = a ? toDateOrNull(a) : null;
+            }
+            updatePanel(state);
+            return this;
+        },
         setDate(dateOrRange) {
             const state = this.data(NS);
             if (!state) return this;
@@ -624,6 +778,8 @@
         }
 
         // Erstellen mit den angepassten globalen Funktionen
+        // Disabled-Konfiguration vorbereiten
+        state.disabled = normalizeDisabled(state.opts.disabled);
         create(state);
 
         return (state.containerMode ? state.$root : state.$input);
@@ -641,7 +797,7 @@
         } else {
             text = formatDateValue(state.selected, dispOpts);
         }
-        const placeholder = isRange ? 'Zeitraum wählen' : 'Datum auswählen';
+        const placeholder = state.opts.placeholder;
         // Falls kein spezielles Text-Element vorhanden (Legacy-Fall), setze Titel als Fallback
         if (state.$displayText && state.$displayText.length) {
             state.$displayText.text(text || placeholder);
@@ -650,5 +806,63 @@
             state.$display.text(text || placeholder);
         }
     }
+
+    // Methoden erweitern: setDisableDates / getDisableDates / setMin / setMax / clearDisableDates
+    const _old = $.fn.bsDatepicker;
+    $.fn.bsDatepicker = function (optionsOrMethod) {
+        if (typeof optionsOrMethod === 'string') {
+            const args = Array.prototype.slice.call(arguments, 1);
+            if (optionsOrMethod === 'setDisableDates') {
+                return this.each(function () {
+                    const $el = $(this);
+                    const state = $el.data(NS) || $el.find('.dp-display').data(NS) || $el.data(NS);
+                    if (!state) return;
+                    state.disabled = normalizeDisabled(args[0] || null);
+                    // Auswahl bereinigen, wenn nötig
+                    const purge = function (d) { return d && isDisabledDate(d, state) ? null : d; };
+                    state.selected = purge(state.selected);
+                    state.rangeStart = purge(state.rangeStart);
+                    updatePanel(state);
+                });
+            }
+            if (optionsOrMethod === 'getDisableDates') {
+                const $el = this.eq(0);
+                const state = $el.data(NS) || $el.find('.dp-display').data(NS) || $el.data(NS);
+                return state ? state.disabled : null;
+            }
+            if (optionsOrMethod === 'setMin') {
+                return this.each(function () {
+                    const state = $(this).data(NS);
+                    if (!state) return;
+                    const cfg = $.extend({}, state.disabled, { min: toDateOrNull(arguments.length > 1 ? arguments[1] : args[0]) });
+                    state.disabled = normalizeDisabled(cfg);
+                    state.selected = (state.selected && isDisabledDate(state.selected, state)) ? null : state.selected;
+                    state.rangeStart = (state.rangeStart && isDisabledDate(state.rangeStart, state)) ? null : state.rangeStart;
+                    updatePanel(state);
+                });
+            }
+            if (optionsOrMethod === 'setMax') {
+                return this.each(function () {
+                    const state = $(this).data(NS);
+                    if (!state) return;
+                    const cfg = $.extend({}, state.disabled, { max: toDateOrNull(arguments.length > 1 ? arguments[1] : args[0]) });
+                    state.disabled = normalizeDisabled(cfg);
+                    state.selected = (state.selected && isDisabledDate(state.selected, state)) ? null : state.selected;
+                    state.rangeStart = (state.rangeStart && isDisabledDate(state.rangeStart, state)) ? null : state.rangeStart;
+                    updatePanel(state);
+                });
+            }
+            if (optionsOrMethod === 'clearDisableDates') {
+                return this.each(function () {
+                    const state = $(this).data(NS);
+                    if (!state) return;
+                    state.disabled = normalizeDisabled(null);
+                    updatePanel(state);
+                });
+            }
+        }
+        // Fallback: normale Initialisierung
+        return _old.apply(this, arguments);
+    };
 
 }(jQuery));
