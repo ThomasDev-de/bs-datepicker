@@ -2,6 +2,8 @@
 
 A jQuery-based datepicker plugin with a Bootstrap look & feel.
 
+![preview](/demo/Bootstrap-Datepicker-Demo.png)
+
 Highlights
 - Single date and range selection
 - Locale support (e.g., `de-DE`) including localized month and weekday names
