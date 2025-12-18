@@ -1,8 +1,30 @@
 {
   "name": "webcito/bs-datepicker",
-  "description": "description",
-  "minimum-stability": "stable",
-  "license": "proprietary",
+  "type": "library",
+  "description": "A lightweight jQuery datepicker based on Bootstrap 5, supporting single-date and range selection, inline or dropdown rendering, Intl-based localization, multi-month views, disabled date rules, and a small, clean API.",
+  "keywords": [
+    "datepicker",
+    "date-picker",
+    "date-range",
+    "range-picker",
+    "jquery",
+    "jquery-plugin",
+    "bootstrap",
+    "bootstrap-5",
+    "bootstrap-datepicker",
+    "calendar",
+    "ui",
+    "frontend",
+    "intl",
+    "localization",
+    "multimonth"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/ThomasDev-de/bs-datepicker",
+  "support": {
+    "issues": "https://github.com/ThomasDev-de/bs-datepicker/issues",
+    "source": "https://github.com/ThomasDev-de/bs-datepicker"
+  },
   "authors": [
     {
       "name": "Thomas Kirsch",
@@ -11,7 +33,6 @@
   ],
   "require": {
     "components/jquery": "^3",
-    "twbs/bootstrap": "^5",
-    "twbs/bootstrap-icons": "^1"
+    "twbs/bootstrap": "^5"
   }
 }

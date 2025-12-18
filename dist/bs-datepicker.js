@@ -1,7 +1,67 @@
+/*!
+ * bs-datepicker (jQuery Plugin)
+ * -----------------------------------------------------------------------------
+ * A lightweight Bootstrap 5–styled datepicker for jQuery with support for
+ * single-date and date-range selection, inline or dropdown rendering,
+ * locale-aware formatting via Intl, multi-month views, and configurable
+ * disabled date rules.
+ *
+ * GitHub: https://github.com/ThomasDev-de/bs-datepicker
+ *
+ * Author: Thomas Kirsch <t.kirsch@webcito.de>
+ * Version: 1.0.0
+ *
+ * Dependencies:
+ * - jQuery >= 3.x
+ * - Bootstrap >= 5.x
+ * - (optional) Bootstrap Icons >= 1.x
+ *
+ * Events (namespace: bs.datepicker):
+ * - init.bs.datepicker
+ * - render.bs.datepicker
+ * - show.bs.datepicker
+ * - hide.bs.datepicker
+ * - navigate.bs.datepicker
+ * - changeDate.bs.datepicker   (detail.value: Date | [Date|null, Date|null] | null)
+ * - clear.bs.datepicker
+ * - destroy.bs.datepicker
+ *
+ * Public API:
+ * - $(el).bsDatepicker('getDate')
+ * - $(el).bsDatepicker('val')
+ * - $(el).bsDatepicker('val', date | start, end | [start, end])
+ * - $(el).bsDatepicker('setDate', dateOrRange)
+ * - $(el).bsDatepicker('setLocale', locale)
+ * - $(el).bsDatepicker('setDisableDates', config)
+ * - $(el).bsDatepicker('getDisableDates')
+ * - $(el).bsDatepicker('setMin', date)
+ * - $(el).bsDatepicker('setMax', date)
+ * - $(el).bsDatepicker('clearDisableDates')
+ * - $(el).bsDatepicker('destroy')
+ *
+ * License: MIT
+ * -----------------------------------------------------------------------------
+ * Copyright (c) 2025 Thomas Kirsch
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ */
+
+
 (function ($) {
 
     // Defaults
     $.bsDatepicker = {
+        version: '1.0.0',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
