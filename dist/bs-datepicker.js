@@ -9,7 +9,7 @@
  * GitHub: https://github.com/ThomasDev-de/bs-datepicker
  *
  * Author: Thomas Kirsch <t.kirsch@webcito.de>
- * Version: 1.0.0
+ * Version: 1.0.1
  *
  * Dependencies:
  * - jQuery >= 3.x
@@ -36,6 +36,7 @@
  * - $(el).bsDatepicker('getDisableDates')
  * - $(el).bsDatepicker('setMin', date)
  * - $(el).bsDatepicker('setMax', date)
+ * - $(el).bsDatepicker('setRange', bool)
  * - $(el).bsDatepicker('clearDisableDates')
  * - $(el).bsDatepicker('destroy')
  *
@@ -61,7 +62,7 @@
 
     // Defaults
     $.bsDatepicker = {
-        version: '1.0.0',
+        version: '1.0.1',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
@@ -305,6 +306,9 @@
                 const isBetween = isRange && rangeStart && selected && inRange(d, rangeStart, selected) && !isStart && !isEnd;
                 const muted = !inMonth; // Dim days outside current month
 
+                // Special case: if range but only ONE day selected, show it like a single selection
+                const isSingleInRange = isRange && ((isStart && !selected) || (isEnd && !rangeStart));
+
                 // TD classes: only remove padding, no colors/borders on TD
                 let tdCls = 'p-0'; // no spacing between days
 
@@ -314,7 +318,7 @@
                 const inRangeAny = isStart || isEnd || isBetween;
 
                 // Subtle theme (always on)
-                if (isRange) {
+                if (isRange && !isSingleInRange) {
                     if (inRangeAny) {
                         // Middle and edges of the range get subtle fill
                         btnCls += ' bg-primary-subtle text-primary-emphasis ';
@@ -325,9 +329,9 @@
                     }
                     // Rounded corners at the visual range boundaries (precise corners only)
                 } else {
-                    if (isSelected) {
+                    if (isSelected || isSingleInRange) {
                         // Single selection: use subtle filled background like range edges for better visibility
-                        btnCls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary ';
+                        btnCls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary rounded ';
                     }
                 }
                 if (muted) btnCls += ' text-muted ';
@@ -349,9 +353,9 @@
                 // Inline styles (no external CSS): draw thin primary caps at left/right for start/end
                 // Also round desired single corners only
                 let cornerStyle = '';
-                if (isRange) {
-                    if (isStart) cornerStyle += 'border-top-left-radius: var(--bs-border-radius); box-shadow: inset 2px 0 0 0 var(--bs-primary);';
-                    if (isEnd) cornerStyle += 'border-bottom-right-radius: var(--bs-border-radius); box-shadow: inset -2px 0 0 0 var(--bs-primary);';
+                if (isRange && !isSingleInRange) {
+                    if (isStart) cornerStyle += 'border-top-left-radius: var(--bs-border-radius); border-bottom-left-radius: var(--bs-border-radius); box-shadow: inset 2px 0 0 0 var(--bs-primary);';
+                    if (isEnd) cornerStyle += 'border-top-right-radius: var(--bs-border-radius); border-bottom-right-radius: var(--bs-border-radius); box-shadow: inset -2px 0 0 0 var(--bs-primary);';
                 }
                 const styleAttr = cornerStyle ? ' style="' + cornerStyle + '"' : '';
                 html += '<button type="button" class="' + clsFinal + '"' + styleAttr + actionAttr + disAttr + ' data-date="' + d.getTime() + '">';
@@ -376,10 +380,11 @@
         // Modern, neutral panel look (no card)
         // Inline: minimal look; also shrink-to-content via d-inline-block (no unnecessary right whitespace)
         // Dropdown: inline-block so width follows content (month tiles) and avoids unused right whitespace
-        var panelCls = opts.inline ? 'bg-transparent p-2 d-inline-block' : 'bg-body border rounded-3 shadow p-2 d-inline-block';
-        html += '<div class="' + panelCls + '">';
+        // Added overflow-hidden to prevent scrollbars during layout shifts
+        var panelCls = opts.inline ? 'bg-transparent p-2 d-inline-block' : 'bg-body border rounded-3 shadow p-1';
+        html += '<div class="' + panelCls + '" style="overflow:hidden">';
         // Compact header: single row with three zones
-        html += '  <div class="d-flex align-items-center justify-content-between gap-2 pb-2' + (opts.inline ? '' : ' border-bottom') + '">';
+        html += '  <div class="d-flex align-items-center justify-content-between gap-2 pb-2 mx-2' + (opts.inline ? '' : ' border-bottom') + '">';
         // Left: PrevYear / Prev
         html += '    <div class="d-flex align-items-center gap-1">';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prevYear" title="Previous year" aria-label="Previous year"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
@@ -419,17 +424,17 @@
             // Inline: subtle one-line selection summary
             html += '    <div class="mb-2 small text-center dp-inline-output' + clsMuted + '">' + (text || placeholder) + '</div>';
         }
-        // Month tiles: fixed width, flex-wrap and capped total width for two columns
-        // Goal: show two months side-by-side when space allows; on narrow screens auto-wrap to one column
-        // gap-2 equals .5rem in Bootstrap → total ≈ 300px + .5rem + 300px
-        const monthsWrapStyle = (months > 1)
-            ? 'max-width: calc(600px + .5rem)'
-            : 'max-width: 100%';
-        // Left-align tiles per row (no centering) so with 3 months the third starts left on the next line
-        html += '    <div class="dp-months d-inline-flex flex-wrap align-items-start gap-2" style="' + monthsWrapStyle + '">';
+        // Month tiles: flex-wrap allows responsive behavior
+        // On narrow screens they wrap to one column; on wider screens they stay side-by-side.
+        // We use a max-width on the container that matches the sum of months to prevent excessive stretching,
+        // but allow it to be smaller (100%) for responsiveness.
+        const monthsWrapStyle = 'max-width: 100%; min-width: ' + (months > 1 ? '310px' : 'auto') + ';';
+        // Use d-flex instead of d-inline-flex for better responsiveness in various containers
+        html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="' + monthsWrapStyle + '">';
         for (let i = 0; i < months; i++) {
-            // Fixed tile width and flex-basis so items do not stretch
-            html += '      <div class="dp-month" style="width:300px; flex:0 0 300px">';
+            // Fixed width for the month tile, but allow it to shrink if needed (though 310px is already quite narrow)
+            // Added padding/gap via helper classes: p-2 ensures spacing when wrapping
+            html += '      <div class="dp-month p-2" style="width:310px; flex:0 0 310px; max-width: 100%">';
             html += renderOneMonthBlock(addMonths(current, i), state);
             html += '      </div>';
         }
@@ -632,12 +637,24 @@
         const $anchor = state.$anchor || state.$input;
         const off = $anchor.offset();
         const h = $anchor.outerHeight();
+        
+        // Initial positioning
         state.$container
             .css({ position: 'absolute', top: off.top + h + 4, left: off.left, zIndex: state.opts.zIndex, width: 'auto' })
             .addClass('show')
             .show();
+
         // After showing, calculate and set width
         applyCalculatedWidth(state);
+
+        // Check if it overflows on the right and adjust position if necessary
+        const viewportWidth = $(window).width();
+        const containerWidth = state.$container.outerWidth();
+        if (off.left + containerWidth > viewportWidth - 10) {
+            const newLeft = Math.max(10, viewportWidth - containerWidth - 10);
+            state.$container.css('left', newLeft);
+        }
+
         emit(state, 'show', {});
         $(document).on('mousedown.' + NS, function (ev) {
             const $t = $(ev.target);
@@ -647,42 +664,78 @@
         });
     }
 
-    // Calculate a sensible max width based on month blocks:
-    // - For 1 month: width = width of that month + horizontal padding
-    // - For >= 2 months: width = sum of first two months + gap + padding
+    // Calculate a sensible width based on month blocks, considering available viewport width:
     function applyCalculatedWidth(state) {
-        const $card = state.$panel.children('.card');
-        if ($card.length === 0) return;
-        const $body = $card.children('.card-body');
-        // Padding of the card body (contains the months wrapper)
-        let bodyPaddingX = 0;
-        if ($body.length) {
-            const bs = getComputedStyle($body[0]);
-            bodyPaddingX = (parseFloat(bs.paddingLeft) || 0) + (parseFloat(bs.paddingRight) || 0);
+        const $panel = state.$panel;
+        if (!$panel || !$panel.length) return;
+
+        // Find the panel container (the one with the background/border)
+        const $outer = $panel.children('div').first();
+        if (!$outer.length) return;
+
+        const $monthsWrap = $outer.find('.dp-months');
+        if (!$monthsWrap.length) return;
+
+        const $months = $monthsWrap.children('.dp-month');
+        if (!$months.length) return;
+
+        // Add resize listener to update width when window is resized
+        if (!state._resizeBound) {
+            const resizeNS = NS + '_' + Math.random().toString(36).substr(2, 9);
+            $(window).on('resize.' + resizeNS, function() {
+                if (state.opts.inline || (state.$container && state.$container.is(':visible'))) {
+                    applyCalculatedWidth(state);
+                    
+                    // Also reposition dropdown on resize if visible
+                    if (!state.opts.inline && state.$container.is(':visible')) {
+                        const $anchor = state.$anchor || state.$input;
+                        const off = $anchor.offset();
+                        const h = $anchor.outerHeight();
+                        const vWidth = $(window).width();
+                        const cWidth = state.$container.outerWidth();
+                        
+                        let newLeft = off.left;
+                        if (off.left + cWidth > vWidth - 10) {
+                            newLeft = Math.max(10, vWidth - cWidth - 10);
+                        }
+                        
+                        state.$container.css({
+                            top: off.top + h + 4,
+                            left: newLeft
+                        });
+                    }
+                }
+            });
+            state._resizeBound = resizeNS;
         }
-        // Months wrapper (first child in body)
-        const $wrap = $body.children().first();
-        if ($wrap.length === 0) return;
-        // Find month elements depending on layout (grid: .col-auto, flex: .d-inline-block)
-        let $months = $wrap.children('.col-auto');
-        if ($months.length === 0) {
-            $months = $wrap.children('.d-inline-block');
-        }
-        if ($months.length === 0) return;
-        const m0 = $months.eq(0).outerWidth(true);
-        let monthsWidth = m0;
-        if ($months.length >= 2) {
-            const m1 = $months.eq(1).outerWidth(true);
-            // In Bootstrap grid the spacing is already in the column widths (padding),
-            // so no extra gap addition necessary.
-            monthsWidth = m0 + m1;
-        }
-        // Target width: strictly month sum + body padding (header may wrap)
-        const targetWidth = monthsWidth + bodyPaddingX;
-        // Set card itself to the target width so no inner 100% stretches it
-        $card.css('width', Math.ceil(targetWidth + 1) + 'px');
-        // Match container exactly to card width
-        state.$container.css({ width: Math.ceil(targetWidth + 1) + 'px' });
+
+        // Calculate how many months can fit side-by-side in the current viewport
+        const viewportWidth = $(window).width();
+        
+        // tileWidth is 310px as defined in renderTemplate. 
+        // We use a fixed value here because measurement might fail if hidden or during animation.
+        const effectiveTileWidth = 310;
+
+        const bs = getComputedStyle($outer[0]);
+        const paddingX = (parseFloat(bs.paddingLeft) || 0) + (parseFloat(bs.paddingRight) || 0);
+        
+        // Available space for tiles (viewport minus some margin)
+        const availableSpace = viewportWidth - 20;
+
+        // Calculate how many months fit in one row
+        const monthsInRow = Math.max(1, Math.min($months.length, Math.floor((availableSpace - paddingX) / effectiveTileWidth)));
+
+        // Target width is enough to hold the months plus padding
+        let targetWidth = Math.ceil((monthsInRow * effectiveTileWidth) + paddingX + 10);
+        
+        // Ensure it doesn't exceed total content width if all months are side-by-side
+        const maxContentWidth = Math.ceil(($months.length * effectiveTileWidth) + paddingX + 10);
+        targetWidth = Math.min(targetWidth, maxContentWidth);
+
+        state.$container.css({ 
+            width: targetWidth + 'px',
+            maxWidth: '95vw'
+        });
     }
     function hideDropdown(state) {
         if (state.opts.inline) return; // no-op
@@ -708,10 +761,10 @@
         if (opts.inline) {
             // Render inline directly inside the wrapper
             // Use form-control styling but avoid taking full width: make it inline-block and width auto
-            state.$container = $('<div class="bs-datepicker inline form-control p-2 d-inline-block w-auto"></div>').appendTo(state.$root);
+            state.$container = $('<div class="bs-datepicker inline form-control p-2 d-inline-block w-auto" style="max-width:100%"></div>').appendTo(state.$root);
         } else {
             // --bs-dropdown-min-width defaults to 10rem → set to auto for content-width dropdowns
-            state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto;"></div>').appendTo('body');
+            state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto; max-width:95vw;"></div>').appendTo('body');
         }
         state.$panel = $('<div></div>').appendTo(state.$container);
         updatePanel(state);
@@ -752,6 +805,11 @@
         const $dataEl = state.containerMode ? state.$root : state.$input;
         if ($dataEl) $dataEl.removeData(NS);
         $(document).off('.' + NS);
+        if (state._resizeBound) {
+            $(window).off('resize.' + state._resizeBound);
+        } else {
+            $(window).off('.' + NS); // Fallback
+        }
         emit(state, 'destroy', {});
     }
 
@@ -843,6 +901,27 @@
         destroy() {
             const state = this.data(NS);
             if (state) destroy(state);
+            return this;
+        },
+        setRange(enabled) {
+            const state = this.data(NS);
+            if (!state) return this;
+            const newVal = !!enabled;
+            if (state.opts.range === newVal) return this;
+
+            state.opts.range = newVal;
+            if (newVal) {
+                // Switching to range: if we had a selection, it becomes the start
+                state.rangeStart = state.selected;
+                state.selected = null;
+            } else {
+                // Switching to single: use rangeStart as selection if available
+                if (state.rangeStart) {
+                    state.selected = state.rangeStart;
+                }
+                state.rangeStart = null;
+            }
+            updatePanel(state);
             return this;
         }
     };
@@ -1056,6 +1135,25 @@
                     state.disabled = normalizeDisabled(null);
                     updatePanel(state);
                     emit(state, 'clearDisableDates', {});
+                });
+            }
+            if (optionsOrMethod === 'setRange') {
+                return this.each(function () {
+                    const state = $(this).data(NS);
+                    if (!state) return;
+                    const newVal = !!args[0];
+                    if (state.opts.range === newVal) return;
+
+                    state.opts.range = newVal;
+                    if (newVal) {
+                        state.rangeStart = state.selected;
+                        state.selected = null;
+                    } else {
+                        if (state.rangeStart) state.selected = state.rangeStart;
+                        state.rangeStart = null;
+                    }
+                    updatePanel(state);
+                    emit(state, 'setRange', { range: newVal });
                 });
             }
         }
