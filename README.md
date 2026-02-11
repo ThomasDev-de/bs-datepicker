@@ -61,7 +61,8 @@ Methods
 | `getDisableDates`   | `getDisableDates()`                     | `object                       | null`                                                                                              | Get current disabled config |
 | `setMin`            | `setMin(date)`                          | `jQuery`                      | Set `min` boundary; purges invalid selection                                                       |
 | `setMax`            | `setMax(date)`                          | `jQuery`                      | Set `max` boundary; purges invalid selection                                                       |
-| `setMonth`          | `setMonth(date)`                        | `jQuery`                      | Jump to a specific month/year without changing selection                                           |
+| `setMonth`          | `setMonth(count)`                       | `jQuery`                      | Set the number of months to display simultaneously                                                 |
+| `setViewMonth`      | `setViewMonth(date)`                    | `jQuery`                      | Jump to a specific month/year without changing selection                                           |
 | `setRange`          | `setRange(boolean)`                     | `jQuery`                      | Toggle between single and range selection at runtime; preserves selection as start/single          |
 | `clearDisableDates` | `clearDisableDates()`                   | `jQuery`                      | Remove all disabled rules                                                                          |
 | `setLocale`         | `setLocale(locale)`                     | `jQuery`                      | Switch locale at runtime and re-render immediately                                                 |
@@ -81,7 +82,8 @@ Events (Namespace: `bs.datepicker`)
 | `setDisableDates.bs.datepicker`   | After `setDisableDates`   | `{ disabled:object }`                              |
 | `setMin.bs.datepicker`            | After `setMin`            | `{ min:Date                                        |null }` |
 | `setMax.bs.datepicker`            | After `setMax`            | `{ max:Date                                        |null }` |
-| `setMonth.bs.datepicker`          | After `setMonth`          | `{ current:Date }`                                 |
+| `setMonth.bs.datepicker`          | After `setMonth`          | `{ months:number }`                                |
+| `setViewMonth.bs.datepicker`      | After `setViewMonth`      | `{ current:Date }`                                 |
 | `setRange.bs.datepicker`          | After `setRange`          | `{ range:boolean }`                                |
 | `clearDisableDates.bs.datepicker` | After `clearDisableDates` | `{}`                                               |
 
