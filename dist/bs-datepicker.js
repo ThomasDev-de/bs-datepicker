@@ -36,6 +36,7 @@
  * - $(el).bsDatepicker('getDisableDates')
  * - $(el).bsDatepicker('setMin', date)
  * - $(el).bsDatepicker('setMax', date)
+ * - $(el).bsDatepicker('setMonth', date)
  * - $(el).bsDatepicker('setRange', bool)
  * - $(el).bsDatepicker('clearDisableDates')
  * - $(el).bsDatepicker('destroy')
@@ -1154,6 +1155,18 @@
                     }
                     updatePanel(state);
                     emit(state, 'setRange', { range: newVal });
+                });
+            }
+            if (optionsOrMethod === 'setMonth') {
+                return this.each(function () {
+                    const state = $(this).data(NS);
+                    if (!state) return;
+                    const newMonth = toDateOrNull(args[0]);
+                    if (newMonth) {
+                        state.current = new Date(newMonth.getFullYear(), newMonth.getMonth(), 1);
+                        updatePanel(state);
+                        emit(state, 'setMonth', { current: new Date(state.current) });
+                    }
                 });
             }
         }
