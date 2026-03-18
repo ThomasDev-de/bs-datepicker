@@ -9,7 +9,7 @@
  * GitHub: https://github.com/ThomasDev-de/bs-datepicker
  *
  * Author: Thomas Kirsch <t.kirsch@webcito.de>
- * Version: 1.0.1
+ * Version: 1.0.2
  *
  * Dependencies:
  * - jQuery >= 3.x
@@ -24,6 +24,7 @@
  * - navigate.bs.datepicker
  * - changeDate.bs.datepicker   (detail.value: Date | [Date|null, Date|null] | null)
  * - clear.bs.datepicker
+ * - setDisabled.bs.datepicker  (detail.disabled: boolean)
  * - destroy.bs.datepicker
  *
  * Public API:
@@ -39,6 +40,7 @@
  * - $(el).bsDatepicker('setMonth', count)
  * - $(el).bsDatepicker('setViewMonth', date)
  * - $(el).bsDatepicker('setRange', bool)
+ * - $(el).bsDatepicker('setDisabled', bool)
  * - $(el).bsDatepicker('clearDisableDates')
  * - $(el).bsDatepicker('destroy')
  *
@@ -64,7 +66,7 @@
 
     // Defaults
     $.bsDatepicker = {
-        version: '1.0.1',
+        version: '1.0.2',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
@@ -636,6 +638,7 @@
 
     function showDropdown(state) {
         if (state.opts.inline) return; // no-op
+        if (state.isDisabled) return; // disabled via setDisabled()
         const $anchor = state.$anchor || state.$input;
         const off = $anchor.offset();
         const h = $anchor.outerHeight();
@@ -780,6 +783,7 @@
             const $anchor = state.$anchor || state.$input;
             if ($anchor && $anchor.length) {
                 $anchor.on('click.' + NS, function () {
+                    if (state.isDisabled) return;
                     if (state.$container.is(':visible')) return;
                     if (state.suppressOpenUntil && Date.now() < state.suppressOpenUntil) return;
                     showDropdown(state);
@@ -789,6 +793,7 @@
                     const key = ev.key || ev.code;
                     if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
                         ev.preventDefault();
+                        if (state.isDisabled) return;
                         if (state.$container.is(':visible')) return;
                         if (state.suppressOpenUntil && Date.now() < state.suppressOpenUntil) return;
                         showDropdown(state);
@@ -966,6 +971,7 @@
             current: null,
             selected: null,
             rangeStart: null,
+            isDisabled: false,
             suppressOpenUntil: 0
         };
 
@@ -1156,6 +1162,18 @@
                     }
                     updatePanel(state);
                     emit(state, 'setRange', { range: newVal });
+                });
+            }
+            if (optionsOrMethod === 'setDisabled') {
+                return this.each(function () {
+                    const state = $(this).data(NS);
+                    if (!state) return;
+                    const disabled = !!args[0];
+                    state.isDisabled = disabled;
+                    if (disabled) {
+                        hideDropdown(state);
+                    }
+                    emit(state, 'setDisabled', { disabled: disabled });
                 });
             }
             if (optionsOrMethod === 'setMonth') {

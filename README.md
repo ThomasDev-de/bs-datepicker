@@ -2,6 +2,8 @@
 
 A jQuery-based datepicker plugin with a Bootstrap look & feel.
 
+Current version: `1.0.2`
+
 ![preview](/demo/Bootstrap-Datepicker-Demo.png)
 
 Highlights
@@ -64,6 +66,7 @@ Methods
 | `setMonth`          | `setMonth(count)`                       | `jQuery`                      | Set the number of months to display simultaneously                                                 |
 | `setViewMonth`      | `setViewMonth(date)`                    | `jQuery`                      | Jump to a specific month/year without changing selection                                           |
 | `setRange`          | `setRange(boolean)`                     | `jQuery`                      | Toggle between single and range selection at runtime; preserves selection as start/single          |
+| `setDisabled`       | `setDisabled(boolean)`                  | `jQuery`                      | Toggle picker interaction; when `true` the dropdown cannot be opened                               |
 | `clearDisableDates` | `clearDisableDates()`                   | `jQuery`                      | Remove all disabled rules                                                                          |
 | `setLocale`         | `setLocale(locale)`                     | `jQuery`                      | Switch locale at runtime and re-render immediately                                                 |
 
@@ -85,6 +88,7 @@ Events (Namespace: `bs.datepicker`)
 | `setMonth.bs.datepicker`          | After `setMonth`          | `{ months:number }`                                |
 | `setViewMonth.bs.datepicker`      | After `setViewMonth`      | `{ current:Date }`                                 |
 | `setRange.bs.datepicker`          | After `setRange`          | `{ range:boolean }`                                |
+| `setDisabled.bs.datepicker`       | After `setDisabled`       | `{ disabled:boolean }`                             |
 | `clearDisableDates.bs.datepicker` | After `clearDisableDates` | `{}`                                               |
 
 Example (legacy – direct input)
@@ -141,6 +145,11 @@ $('#dp').bsDatepicker('setDisableDates', {min: '2025-01-01', max: '2025-12-31'})
 $('#dp').bsDatepicker('setMin', '2025-01-01');
 $('#dp').bsDatepicker('setMax', '2025-12-31');
 $('#dp').bsDatepicker('clearDisableDates');
+
+// Prevent opening the picker
+$('#dp').bsDatepicker('setDisabled', true);
+// Enable it again
+$('#dp').bsDatepicker('setDisabled', false);
 
 // Locale wechseln (UI wird neu gerendert)
 $('#dp').bsDatepicker('setLocale', 'de-DE');
