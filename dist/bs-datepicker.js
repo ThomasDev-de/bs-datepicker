@@ -766,7 +766,7 @@
         if (opts.inline) {
             // Render inline directly inside the wrapper
             // Use form-control styling but avoid taking full width: make it inline-block and width auto
-            state.$container = $('<div class="bs-datepicker inline form-control p-2 d-inline-block w-auto" style="max-width:100%"></div>').appendTo(state.$root);
+            state.$container = $('<div class="bs-datepicker inline border p-2 d-inline-block w-auto" style="max-width:100%"></div>').appendTo(state.$root);
         } else {
             // --bs-dropdown-min-width defaults to 10rem → set to auto for content-width dropdowns
             state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto; max-width:95vw;"></div>').appendTo('body');
