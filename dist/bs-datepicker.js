@@ -9,7 +9,7 @@
  * GitHub: https://github.com/ThomasDev-de/bs-datepicker
  *
  * Author: Thomas Kirsch <t.kirsch@webcito.de>
- * Version: 1.0.2
+ * Version: 1.0.3
  *
  * Dependencies:
  * - jQuery >= 3.x
@@ -66,7 +66,7 @@
 
     // Defaults
     $.bsDatepicker = {
-        version: '1.0.2',
+        version: '1.0.3',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
@@ -84,7 +84,7 @@
                 today: 'bi bi-record-circle',
                 next: 'bi bi-chevron-right',
                 nextYear: 'bi bi-chevron-double-right',
-                clear: 'bi bi-x-lg'
+                clear: 'bi bi-eraser'
             },
             // CSS classes for the visible display (no actual input field)
             classes: {

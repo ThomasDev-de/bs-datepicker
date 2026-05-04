@@ -159,8 +159,13 @@
                 disabled: { dates: [] }
             });
 
-            // Range inline with 3 months (visible)
+            // Shared demo dates (kept dynamic so examples still work in later years)
             const today = new Date();
+            const currentYear = today.getFullYear();
+            const yearStartIso = currentYear + '-01-01';
+            const yearEndIso = currentYear + '-12-31';
+
+            // Range inline with 3 months (visible)
             $('#rangeInline').bsDatepicker({
                 inline: true,
                 locale: 'en-US',
@@ -183,8 +188,12 @@
                 locale: 'en-US',
                 months: 2,
                 placeholder: 'Range (Dropdown)',
-                disabled: { min: '2025-01-01', max: '2025-12-31' }
+                disabled: { min: yearStartIso, max: yearEndIso }
             });
+
+            $('#btnRD_SetMin').text('setMin(' + yearStartIso + ')');
+            $('#btnRD_SetMax').text('setMax(' + yearEndIso + ')');
+            $('#btnYear2025').text('Allow only ' + currentYear);
 
             // Demo form submit → alert form values
             // Global submit feedback at the very end of the page (single toast area)
@@ -327,7 +336,7 @@
                 $('#rangeDropdown').bsDatepicker('val', null, null);
             });
             $('#btnYear2025').on('click', function(){
-                $('#rangeDropdown').bsDatepicker('setDisableDates', { min: '2025-01-01', max: '2025-12-31' });
+                $('#rangeDropdown').bsDatepicker('setDisableDates', { min: yearStartIso, max: yearEndIso });
             });
             // Range Dropdown: more methods
             $('#btnRD_GetDate').on('click', function(){
@@ -347,10 +356,10 @@
                 alert('getDisableDates():\n' + JSON.stringify(cfg, null, 2));
             });
             $('#btnRD_SetMin').on('click', function(){
-                $('#rangeDropdown').bsDatepicker('setMin', '2025-01-01');
+                $('#rangeDropdown').bsDatepicker('setMin', yearStartIso);
             });
             $('#btnRD_SetMax').on('click', function(){
-                $('#rangeDropdown').bsDatepicker('setMax', '2025-12-31');
+                $('#rangeDropdown').bsDatepicker('setMax', yearEndIso);
             });
             $('#btnRD_ClearDisabled').on('click', function(){
                 $('#rangeDropdown').bsDatepicker('clearDisableDates');
@@ -401,4 +410,3 @@
     </script>
 </body>
 </html>
-
