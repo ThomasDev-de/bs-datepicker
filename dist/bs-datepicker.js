@@ -93,6 +93,11 @@
                 displayIcon: 'bi bi-calendar-event'
             },
             placeholder: 'Select period',
+            // Initial value:
+            // - single: Date|string|null
+            // - range: [Date|string|null, Date|string|null]
+            // If omitted, container mode falls back to hidden input values.
+            value: null,
             // Disabled dates configuration
             // Forms:
             // - disabled: { before?: Date|string, after?: Date|string, min?: Date|string, max?: Date|string, dates?: (Date|string)[] }
@@ -171,6 +176,36 @@
             });
         }
         return out;
+    }
+
+    function resolveInitialSelection(state) {
+        const hasExplicitValue = typeof state.opts.value !== 'undefined' && state.opts.value !== null;
+        if (hasExplicitValue) {
+            if (state.opts.range) {
+                let a = null, b = null;
+                if (Array.isArray(state.opts.value)) {
+                    a = toDateOrNull(state.opts.value[0]);
+                    b = toDateOrNull(state.opts.value[1]);
+                } else {
+                    a = toDateOrNull(state.opts.value);
+                }
+                return { start: a, end: b };
+            }
+            return { start: null, end: toDateOrNull(state.opts.value) };
+        }
+
+        // Fallback: infer from existing element values
+        if (state.containerMode) {
+            const sRaw = state.$inStart && state.$inStart.length ? state.$inStart.val() : null;
+            const eRaw = state.$inEnd && state.$inEnd.length ? state.$inEnd.val() : null;
+            if (state.opts.range) {
+                return { start: toDateOrNull(sRaw), end: toDateOrNull(eRaw) };
+            }
+            return { start: null, end: toDateOrNull(sRaw) };
+        }
+
+        const inputRaw = state.$input && state.$input.length ? state.$input.val() : null;
+        return { start: null, end: toDateOrNull(inputRaw) };
     }
 
     function isDisabledDate(d, state) {
@@ -772,6 +807,17 @@
         state.current = startOfDay(new Date());
         state.selected = null;      // single date or range end
         state.rangeStart = null;    // range start
+
+        const initial = resolveInitialSelection(state);
+        state.rangeStart = initial.start;
+        state.selected = initial.end;
+        if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
+        if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
+
+        const firstVisible = state.rangeStart || state.selected;
+        if (firstVisible) {
+            state.current = new Date(firstVisible.getFullYear(), firstVisible.getMonth(), 1);
+        }
 
         if (opts.inline) {
             // Render inline directly inside the wrapper
