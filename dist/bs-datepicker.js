@@ -317,30 +317,37 @@
                 let tdCls = 'p-0'; // no spacing between days
 
                 // Button classes: base without rounded corners; full-width buttons fill cells
-                // Subtle highlighting (Bootstrap 5.3 utilities)
+                // Subtle highlighting classes (BS5); inline styles below add BS4-compatible fallbacks
                 let btnCls = 'btn btn-sm w-100 border-0 rounded-0 ';
                 const inRangeAny = isStart || isEnd || isBetween;
+                let visualStyle = '';
 
                 // Subtle theme (always on)
                 if (isRange && !isSingleInRange) {
                     if (inRangeAny) {
                         // Middle and edges of the range get subtle fill
                         btnCls += ' bg-primary-subtle text-primary-emphasis ';
+                        visualStyle += 'background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.15)); color: var(--bs-primary-text-emphasis, #0a58ca);';
                     }
                     if (isStart || isEnd) {
                         // Emphasize the range edges
                         btnCls += ' border border-primary fw-semibold ';
+                        visualStyle += 'border:1px solid var(--bs-primary, #0d6efd); font-weight:600;';
                     }
                     // Rounded corners at the visual range boundaries (precise corners only)
                 } else {
                     if (isSelected || isSingleInRange) {
                         // Single selection: use subtle filled background like range edges for better visibility
                         btnCls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary rounded ';
+                        visualStyle += 'background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.15)); color: var(--bs-primary-text-emphasis, #0a58ca); border:1px solid var(--bs-primary, #0d6efd); font-weight:600;';
                     }
                 }
                 if (muted) btnCls += ' text-muted ';
                 // Today: subtle emphasis if not part of selection
-                if (isToday && !(isSelected || inRangeAny)) btnCls += ' text-primary fw-semibold ';
+                if (isToday && !(isSelected || inRangeAny)) {
+                    btnCls += ' text-primary fw-semibold ';
+                    visualStyle += 'color: var(--bs-primary, #0d6efd); font-weight:600;';
+                }
 
                 const disabled = isDisabledDate(d, state);
                 html += '<td class="' + tdCls.trim() + '">';
@@ -350,6 +357,9 @@
                 // Disabled: give a subtle gray background, analogous to the subtle blue of selection
                 // Uses Bootstrap 5.3 utilities: bg-secondary-subtle + text-secondary-emphasis
                 const disabledEnhance = disabled ? ' bg-secondary-subtle text-secondary-emphasis ' : '';
+                if (disabled) {
+                    visualStyle += 'background-color: var(--bs-secondary-bg-subtle, rgba(108,117,125,.15)); color: var(--bs-secondary-text-emphasis, #6c757d);';
+                }
                 // Add structural classes for styling without extra CSS files
                 // dp-start / dp-end allow inline styles below to target edges precisely per button
                 const structCls = (isStart ? ' dp-start ' : '') + (isEnd ? ' dp-end ' : '');
@@ -361,7 +371,7 @@
                     if (isStart) cornerStyle += 'border-top-left-radius: var(--bs-border-radius); border-bottom-left-radius: var(--bs-border-radius); box-shadow: inset 2px 0 0 0 var(--bs-primary);';
                     if (isEnd) cornerStyle += 'border-top-right-radius: var(--bs-border-radius); border-bottom-right-radius: var(--bs-border-radius); box-shadow: inset -2px 0 0 0 var(--bs-primary);';
                 }
-                const styleAttr = cornerStyle ? ' style="' + cornerStyle + '"' : '';
+                const styleAttr = (visualStyle || cornerStyle) ? ' style="' + visualStyle + cornerStyle + '"' : '';
                 html += '<button type="button" class="' + clsFinal + '"' + styleAttr + actionAttr + disAttr + ' data-date="' + d.getTime() + '">';
                 html += d.getDate();
                 html += '</button>';
