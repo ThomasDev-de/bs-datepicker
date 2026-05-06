@@ -460,12 +460,20 @@
             const disabled = isWholeYearDisabled(year, state);
             const selected = selectedYear === year || rangeStartYear === year;
             let cls = 'btn btn-sm w-100 border-0';
-            if (selected) cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
-            else if (year === todayYear) cls += ' text-primary fw-semibold';
+            let visualStyle = '';
+            if (selected) {
+                cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
+                visualStyle += 'background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.15)); color: var(--bs-primary-text-emphasis, #0a58ca); border:1px solid var(--bs-primary, #0d6efd); font-weight:600;';
+            } else if (year === todayYear) {
+                cls += ' text-primary fw-semibold';
+                visualStyle += 'color: var(--bs-primary, #0d6efd); font-weight:600;';
+            }
             if (muted) cls += ' text-muted';
             if (disabled) cls += ' disabled bg-secondary-subtle text-secondary-emphasis';
+            if (disabled) visualStyle += 'background-color: var(--bs-secondary-bg-subtle, rgba(108,117,125,.15)); color: var(--bs-secondary-text-emphasis, #6c757d);';
+            const styleAttr = visualStyle ? ' style="' + visualStyle + '"' : '';
             html += '    <div class="col">';
-            html += '      <button type="button" class="' + cls + '"' + (disabled ? ' disabled aria-disabled="true"' : ' data-action="selectYear"') + ' data-year="' + year + '">' + year + '</button>';
+            html += '      <button type="button" class="' + cls + '"' + styleAttr + (disabled ? ' disabled aria-disabled="true"' : ' data-action="selectYear"') + ' data-year="' + year + '">' + year + '</button>';
             html += '    </div>';
         }
         html += '  </div>';
@@ -492,12 +500,20 @@
                 (rangeStartYear !== null && rangeStartYear >= decadeStart && rangeStartYear <= decadeEnd);
             const isCurrentDecade = todayYear >= decadeStart && todayYear <= decadeEnd;
             let cls = 'btn btn-sm w-100 border-0';
-            if (selected) cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
-            else if (isCurrentDecade) cls += ' text-primary fw-semibold';
+            let visualStyle = '';
+            if (selected) {
+                cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
+                visualStyle += 'background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.15)); color: var(--bs-primary-text-emphasis, #0a58ca); border:1px solid var(--bs-primary, #0d6efd); font-weight:600;';
+            } else if (isCurrentDecade) {
+                cls += ' text-primary fw-semibold';
+                visualStyle += 'color: var(--bs-primary, #0d6efd); font-weight:600;';
+            }
             if (muted) cls += ' text-muted';
             if (disabled) cls += ' disabled bg-secondary-subtle text-secondary-emphasis';
+            if (disabled) visualStyle += 'background-color: var(--bs-secondary-bg-subtle, rgba(108,117,125,.15)); color: var(--bs-secondary-text-emphasis, #6c757d);';
+            const styleAttr = visualStyle ? ' style="' + visualStyle + '"' : '';
             html += '    <div class="col">';
-            html += '      <button type="button" class="' + cls + '"' + (disabled ? ' disabled aria-disabled="true"' : ' data-action="selectDecade"') + ' data-year="' + decadeStart + '">' + decadeStart + '-' + decadeEnd + '</button>';
+            html += '      <button type="button" class="' + cls + '"' + styleAttr + (disabled ? ' disabled aria-disabled="true"' : ' data-action="selectDecade"') + ' data-year="' + decadeStart + '">' + decadeStart + '-' + decadeEnd + '</button>';
             html += '    </div>';
         }
         html += '  </div>';
