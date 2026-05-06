@@ -2,7 +2,7 @@
 
 A jQuery-based datepicker plugin with a Bootstrap look & feel.
 
-Current version: `1.0.3`
+Current version: `1.1.0`
 
 ![preview](/demo/Bootstrap-Datepicker-Demo.png)
 
@@ -13,6 +13,7 @@ Highlights
 - Inline or dropdown rendering
 - Week start Monday or Sunday
 - Multi-month view (`months`) with responsive layout (tiles wrap on small screens)
+- Clickable header navigation with year and decade grids for fast jumps across many years
 - Public method `setRange(boolean)` to toggle range mode at runtime
 - Visible display as a clickable wrapper (no input) with calendar icon in dropdown mode; in inline mode no separate wrapper
 - Configurable navigation and clear icons (Bootstrap Icons classes)
@@ -78,7 +79,7 @@ Events (Namespace: `bs.datepicker`)
 | `show.bs.datepicker`              | Dropdown shown            | `{}`                                               |
 | `hide.bs.datepicker`              | Dropdown hidden           | `{}`                                               |
 | `render.bs.datepicker`            | After each render         | `{ current:Date, range:boolean }`                  |
-| `navigate.bs.datepicker`          | On nav buttons            | `{ action:'prev'                                   |'next'|'prevYear'|'nextYear'|'today', current:Date }` |
+| `navigate.bs.datepicker`          | On nav/header buttons     | `{ action:string, current:Date }` where action is one of prev, next, prevYear, nextYear, today, zoomOut, selectYear, selectDecade |
 | `changeDate.bs.datepicker`        | Any selection change      | Single: `{ value:Date                              |null }`; Range: `{ value:[Date|null, Date|null] }` |
 | `clear.bs.datepicker`             | On clear                  | `{}` (plus a `changeDate` with nulls)              |
 | `setLocale.bs.datepicker`         | After `setLocale`         | `{ locale:string }`                                |
@@ -162,6 +163,7 @@ Notes
   <link href="/path/to/bootstrap-icons.css" rel="stylesheet">
   ```
 - The “Clear” button in the header clears the selection (single date or range). Hidden inputs are set to empty strings.
+- Click the header title to switch from days to years, then to decades. Selecting a decade opens its years; selecting a year returns to the day view.
 - In container mode, hidden inputs are always filled in ISO format `YYYY-MM-DD`. The visible display shows localized, formatted values.
 - Disabled days are visually disabled and cannot be clicked. Navigation remains possible.
 - Events are triggered on the container element (container mode) or on the input/anchor (legacy). You can access data via `e.detail` or the

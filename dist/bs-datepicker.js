@@ -9,7 +9,7 @@
  * GitHub: https://github.com/ThomasDev-de/bs-datepicker
  *
  * Author: Thomas Kirsch <t.kirsch@webcito.de>
- * Version: 1.0.3
+ * Version: 1.1.0
  *
  * Dependencies:
  * - jQuery >= 3.x
@@ -66,7 +66,7 @@
 
     // Defaults
     $.bsDatepicker = {
-        version: '1.0.3',
+        version: '1.1.0',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
@@ -237,6 +237,29 @@
         // Full month name for per-month headers above each calendar
         const fmt = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
         return fmt.format(date);
+    }
+    function getDecadeStart(year) {
+        return Math.floor(year / 10) * 10;
+    }
+    function getCenturyStart(year) {
+        return Math.floor(year / 100) * 100;
+    }
+    function isWholeYearDisabled(year, state) {
+        if (!state || !state.disabled) return false;
+        const first = startOfDay(new Date(year, 0, 1));
+        const last = startOfDay(new Date(year, 11, 31));
+        const dis = state.disabled;
+        if (dis.min && last < dis.min) return true;
+        if (dis.max && first > dis.max) return true;
+        if (dis.before && last <= dis.before) return true;
+        if (dis.after && first >= dis.after) return true;
+        return false;
+    }
+    function isWholeDecadeDisabled(startYear, state) {
+        for (let y = startYear; y <= startYear + 9; y++) {
+            if (!isWholeYearDisabled(y, state)) return false;
+        }
+        return true;
     }
     function formatDateValue(value, opts) {
         const { format, locale, separator } = opts;
@@ -421,9 +444,87 @@
         return html;
     }
 
+    function renderYearGrid(state) {
+        const currentYear = state.current.getFullYear();
+        const decadeStart = getDecadeStart(currentYear);
+        const todayYear = (new Date()).getFullYear();
+        const selectedYear = state.selected ? state.selected.getFullYear() : null;
+        const rangeStartYear = state.rangeStart ? state.rangeStart.getFullYear() : null;
+
+        let html = '';
+        html += '<div class="dp-year-grid p-2" style="width:310px; max-width:100%">';
+        html += '  <div class="row row-cols-3 g-1">';
+        for (let i = -1; i <= 10; i++) {
+            const year = decadeStart + i;
+            const muted = year < decadeStart || year > decadeStart + 9;
+            const disabled = isWholeYearDisabled(year, state);
+            const selected = selectedYear === year || rangeStartYear === year;
+            let cls = 'btn btn-sm w-100 border-0';
+            if (selected) cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
+            else if (year === todayYear) cls += ' text-primary fw-semibold';
+            if (muted) cls += ' text-muted';
+            if (disabled) cls += ' disabled bg-secondary-subtle text-secondary-emphasis';
+            html += '    <div class="col">';
+            html += '      <button type="button" class="' + cls + '"' + (disabled ? ' disabled aria-disabled="true"' : ' data-action="selectYear"') + ' data-year="' + year + '">' + year + '</button>';
+            html += '    </div>';
+        }
+        html += '  </div>';
+        html += '</div>';
+        return html;
+    }
+
+    function renderDecadeGrid(state) {
+        const currentYear = state.current.getFullYear();
+        const centuryStart = getCenturyStart(currentYear);
+        const todayYear = (new Date()).getFullYear();
+        const selectedYear = state.selected ? state.selected.getFullYear() : null;
+        const rangeStartYear = state.rangeStart ? state.rangeStart.getFullYear() : null;
+
+        let html = '';
+        html += '<div class="dp-decade-grid p-2" style="width:310px; max-width:100%">';
+        html += '  <div class="row row-cols-3 g-1">';
+        for (let i = -1; i <= 10; i++) {
+            const decadeStart = centuryStart + (i * 10);
+            const decadeEnd = decadeStart + 9;
+            const muted = decadeStart < centuryStart || decadeStart > centuryStart + 90;
+            const disabled = isWholeDecadeDisabled(decadeStart, state);
+            const selected = (selectedYear !== null && selectedYear >= decadeStart && selectedYear <= decadeEnd) ||
+                (rangeStartYear !== null && rangeStartYear >= decadeStart && rangeStartYear <= decadeEnd);
+            const isCurrentDecade = todayYear >= decadeStart && todayYear <= decadeEnd;
+            let cls = 'btn btn-sm w-100 border-0';
+            if (selected) cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
+            else if (isCurrentDecade) cls += ' text-primary fw-semibold';
+            if (muted) cls += ' text-muted';
+            if (disabled) cls += ' disabled bg-secondary-subtle text-secondary-emphasis';
+            html += '    <div class="col">';
+            html += '      <button type="button" class="' + cls + '"' + (disabled ? ' disabled aria-disabled="true"' : ' data-action="selectDecade"') + ' data-year="' + decadeStart + '">' + decadeStart + '-' + decadeEnd + '</button>';
+            html += '    </div>';
+        }
+        html += '  </div>';
+        html += '</div>';
+        return html;
+    }
+
+    function navigateCurrent(state, action) {
+        const mode = state.viewMode || 'days';
+        let monthDelta = 0;
+        if (mode === 'days') {
+            if (action === 'prev') monthDelta = -1;
+            if (action === 'next') monthDelta = 1;
+            if (action === 'prevYear') monthDelta = -12;
+            if (action === 'nextYear') monthDelta = 12;
+        } else if (mode === 'years') {
+            monthDelta = (action === 'prev' || action === 'prevYear') ? -120 : 120;
+        } else if (mode === 'decades') {
+            monthDelta = (action === 'prev' || action === 'prevYear') ? -1200 : 1200;
+        }
+        state.current = addMonths(state.current, monthDelta);
+    }
+
     function renderTemplate(state) {
         const { opts, current } = state;
         const months = Math.max(1, parseInt(opts.months || 1, 10));
+        const viewMode = state.viewMode || 'days';
 
         let html = '';
         // Modern, neutral panel look (no card)
@@ -436,22 +537,36 @@
         html += '  <div class="d-flex align-items-center justify-content-between gap-2 pb-2 mx-2' + (opts.inline ? '' : ' border-bottom') + '">';
         // Left: PrevYear / Prev
         html += '    <div class="d-flex align-items-center gap-1">';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prevYear" title="Previous year" aria-label="Previous year"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prev" title="Previous month" aria-label="Previous month"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prevYear" title="Previous range" aria-label="Previous range"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prev" title="Previous" aria-label="Previous"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
         html += '    </div>';
         // Center: title (navigation – keep short format to stay compact)
         html += '    <div class="text-center flex-grow-1">';
         (function(){
-            const fmtShort = new Intl.DateTimeFormat(opts.locale, { month: 'short', year: 'numeric' });
-            const titleLeft = fmtShort.format(current);
-            const titleRight = months > 1 ? fmtShort.format(addMonths(current, months - 1)) : '';
-            html += '      <div class="small fw-semibold text-capitalize">' + titleLeft + (months > 1 ? ' … ' + titleRight : '') + '</div>';
+            let title = '';
+            if (viewMode === 'days') {
+                const fmtShort = new Intl.DateTimeFormat(opts.locale, { month: 'short', year: 'numeric' });
+                const titleLeft = fmtShort.format(current);
+                const titleRight = months > 1 ? fmtShort.format(addMonths(current, months - 1)) : '';
+                title = titleLeft + (months > 1 ? ' … ' + titleRight : '');
+            } else if (viewMode === 'years') {
+                const start = getDecadeStart(current.getFullYear());
+                title = start + '-' + (start + 9);
+            } else {
+                const start = getCenturyStart(current.getFullYear());
+                title = start + '-' + (start + 99);
+            }
+            if (viewMode === 'decades') {
+                html += '      <div class="small fw-semibold text-capitalize">' + title + '</div>';
+            } else {
+                html += '      <button type="button" class="btn btn-sm border-0 p-0 small fw-semibold text-capitalize" data-action="zoomOut" title="Show broader date range" aria-label="Show broader date range">' + title + '</button>';
+            }
         })();
         html += '    </div>';
         // Right: Next / NextYear / Today / Clear as icons
         html += '    <div class="d-flex align-items-center gap-1">';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="next" title="Next month" aria-label="Next month"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="nextYear" title="Next year" aria-label="Next year"><i class="' + (opts.icons && (opts.icons.nextYear || opts.icons.next) || $.bsDatepicker.default.icons.nextYear) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="next" title="Next" aria-label="Next"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
+        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="nextYear" title="Next range" aria-label="Next range"><i class="' + (opts.icons && (opts.icons.nextYear || opts.icons.next) || $.bsDatepicker.default.icons.nextYear) + '"></i></button>';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="today" title="Today" aria-label="Today"><i class="' + (opts.icons && opts.icons.today || $.bsDatepicker.default.icons.today) + '"></i></button>';
         html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="clear" title="Clear" aria-label="Clear"><i class="' + (opts.icons && opts.icons.clear || $.bsDatepicker.default.icons.clear) + '"></i></button>';
         html += '    </div>';
@@ -473,19 +588,27 @@
             // Inline: subtle one-line selection summary
             html += '    <div class="mb-2 small text-center dp-inline-output' + clsMuted + '">' + (text || placeholder) + '</div>';
         }
-        // Month tiles: flex-wrap allows responsive behavior
-        // On narrow screens they wrap to one column; on wider screens they stay side-by-side.
-        // We use a max-width on the container that matches the sum of months to prevent excessive stretching,
-        // but allow it to be smaller (100%) for responsiveness.
-        const monthsWrapStyle = 'max-width: 100%; min-width: ' + (months > 1 ? '310px' : 'auto') + ';';
-        // Use d-flex instead of d-inline-flex for better responsiveness in various containers
-        html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="' + monthsWrapStyle + '">';
-        for (let i = 0; i < months; i++) {
-            // Fixed width for the month tile, but allow it to shrink if needed (though 310px is already quite narrow)
-            // Added padding/gap via helper classes: p-2 ensures spacing when wrapping
-            html += '      <div class="dp-month p-2" style="width:310px; flex:0 0 310px; max-width: 100%">';
-            html += renderOneMonthBlock(addMonths(current, i), state);
-            html += '      </div>';
+        if (viewMode === 'years') {
+            html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="max-width:100%; min-width:auto;">';
+            html += renderYearGrid(state);
+        } else if (viewMode === 'decades') {
+            html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="max-width:100%; min-width:auto;">';
+            html += renderDecadeGrid(state);
+        } else {
+            // Month tiles: flex-wrap allows responsive behavior
+            // On narrow screens they wrap to one column; on wider screens they stay side-by-side.
+            // We use a max-width on the container that matches the sum of months to prevent excessive stretching,
+            // but allow it to be smaller (100%) for responsiveness.
+            const monthsWrapStyle = 'max-width: 100%; min-width: ' + (months > 1 ? '310px' : 'auto') + ';';
+            // Use d-flex instead of d-inline-flex for better responsiveness in various containers
+            html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="' + monthsWrapStyle + '">';
+            for (let i = 0; i < months; i++) {
+                // Fixed width for the month tile, but allow it to shrink if needed (though 310px is already quite narrow)
+                // Added padding/gap via helper classes: p-2 ensures spacing when wrapping
+                html += '      <div class="dp-month p-2" style="width:310px; flex:0 0 310px; max-width: 100%">';
+                html += renderOneMonthBlock(addMonths(current, i), state);
+                html += '      </div>';
+            }
         }
         html += '    </div>';
         html += '  </div>';
@@ -498,25 +621,25 @@
         $panel.off('.' + NS);
         $panel.on('click.' + NS, '[data-action="prev"]', function (e) {
             e.preventDefault();
-            state.current = addMonths(state.current, -1);
+            navigateCurrent(state, 'prev');
             updatePanel(state);
             emit(state, 'navigate', { action: 'prev', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="prevYear"]', function (e) {
             e.preventDefault();
-            state.current = addMonths(state.current, -12);
+            navigateCurrent(state, 'prevYear');
             updatePanel(state);
             emit(state, 'navigate', { action: 'prevYear', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="next"]', function (e) {
             e.preventDefault();
-            state.current = addMonths(state.current, +1);
+            navigateCurrent(state, 'next');
             updatePanel(state);
             emit(state, 'navigate', { action: 'next', current: new Date(state.current) });
         });
         $panel.on('click.' + NS, '[data-action="nextYear"]', function (e) {
             e.preventDefault();
-            state.current = addMonths(state.current, +12);
+            navigateCurrent(state, 'nextYear');
             updatePanel(state);
             emit(state, 'navigate', { action: 'nextYear', current: new Date(state.current) });
         });
@@ -526,6 +649,30 @@
             state.current = new Date(t.getFullYear(), t.getMonth(), 1);
             updatePanel(state);
             emit(state, 'navigate', { action: 'today', current: new Date(state.current) });
+        });
+        $panel.on('click.' + NS, '[data-action="zoomOut"]', function (e) {
+            e.preventDefault();
+            state.viewMode = (state.viewMode === 'years') ? 'decades' : 'years';
+            updatePanel(state);
+            emit(state, 'navigate', { action: 'zoomOut', current: new Date(state.current), viewMode: state.viewMode });
+        });
+        $panel.on('click.' + NS, '[data-action="selectYear"]', function (e) {
+            e.preventDefault();
+            const year = Number($(this).data('year'));
+            if (isNaN(year)) return;
+            state.current = new Date(year, state.current.getMonth(), 1);
+            state.viewMode = 'days';
+            updatePanel(state);
+            emit(state, 'navigate', { action: 'selectYear', current: new Date(state.current), viewMode: state.viewMode });
+        });
+        $panel.on('click.' + NS, '[data-action="selectDecade"]', function (e) {
+            e.preventDefault();
+            const year = Number($(this).data('year'));
+            if (isNaN(year)) return;
+            state.current = new Date(year, state.current.getMonth(), 1);
+            state.viewMode = 'years';
+            updatePanel(state);
+            emit(state, 'navigate', { action: 'selectDecade', current: new Date(state.current), viewMode: state.viewMode });
         });
         $panel.on('click.' + NS, '[data-action="clear"]', function (e) {
             e.preventDefault();
@@ -726,7 +873,7 @@
         const $monthsWrap = $outer.find('.dp-months');
         if (!$monthsWrap.length) return;
 
-        const $months = $monthsWrap.children('.dp-month');
+        const $months = $monthsWrap.children('.dp-month, .dp-year-grid, .dp-decade-grid');
         if (!$months.length) return;
 
         // Add resize listener to update width when window is resized
@@ -940,6 +1087,7 @@
                 state.selected = a ? toDateOrNull(a) : null;
                 if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
             }
+            state.viewMode = 'days';
             updatePanel(state);
             return this;
         },
@@ -958,6 +1106,7 @@
             } else {
                 state.selected = null; state.rangeStart = null;
             }
+            state.viewMode = 'days';
             updatePanel(state);
             return this;
         },
@@ -1025,6 +1174,7 @@
             $container: null,
             $panel: null,
             current: null,
+            viewMode: 'days',
             selected: null,
             rangeStart: null,
             isDisabled: false,
@@ -1251,6 +1401,7 @@
                     const newMonth = toDateOrNull(args[0]);
                     if (newMonth) {
                         state.current = new Date(newMonth.getFullYear(), newMonth.getMonth(), 1);
+                        state.viewMode = 'days';
                         updatePanel(state);
                         emit(state, 'setViewMonth', { current: new Date(state.current) });
                     }

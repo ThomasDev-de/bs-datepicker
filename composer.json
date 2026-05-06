@@ -1,6 +1,6 @@
 {
   "name": "webcito/bs-datepicker",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "type": "library",
   "description": "A lightweight jQuery datepicker based on Bootstrap 5, supporting single-date and range selection, inline or dropdown rendering, Intl-based localization, multi-month views, disabled date rules, and a small, clean API.",
   "keywords": [
