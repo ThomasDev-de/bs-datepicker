@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.1 - 2026-05-06
+
+### Added
+
+- Added a light/dark theme toggle to the demo page.
+
+### Changed
+
+- Made the clickable header title easier to discover by rendering it as a neutral outline button with a chevron.
+- Improved Bootstrap 4 fallback styling for today, selected, and disabled states in year and decade views.
+
+### Fixed
+
+- Fixed range edge toggling so clicking the selected start or end clears only that edge and keeps the other edge as an anchor.
+- Fixed incomplete ranges so hidden start/end inputs remain open instead of mirroring a single selected edge into both fields.
+- Normalized range state after user interaction and API updates so the smaller date is always the start when both edges are set.
+
 ## 1.1.0 - 2026-05-06
 
 ### Added

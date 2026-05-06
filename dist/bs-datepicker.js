@@ -9,7 +9,7 @@
  * GitHub: https://github.com/ThomasDev-de/bs-datepicker
  *
  * Author: Thomas Kirsch <t.kirsch@webcito.de>
- * Version: 1.1.0
+ * Version: 1.1.1
  *
  * Dependencies:
  * - jQuery >= 3.x
@@ -66,7 +66,7 @@
 
     // Defaults
     $.bsDatepicker = {
-        version: '1.1.0',
+        version: '1.1.1',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
@@ -146,6 +146,12 @@
         if (!a || !b) return false;
         const [s, e] = clampRange(a, b);
         return d >= startOfDay(s) && d <= startOfDay(e);
+    }
+    function normalizeRangeState(state) {
+        if (!state || !state.rangeStart || !state.selected) return;
+        const pair = clampRange(state.rangeStart, state.selected);
+        state.rangeStart = pair[0];
+        state.selected = pair[1];
     }
 
     function toDateOrNull(v) {
@@ -575,7 +581,10 @@
             if (viewMode === 'decades') {
                 html += '      <div class="small fw-semibold text-capitalize">' + title + '</div>';
             } else {
-                html += '      <button type="button" class="btn btn-sm border-0 p-0 small fw-semibold text-capitalize" data-action="zoomOut" title="Show broader date range" aria-label="Show broader date range">' + title + '</button>';
+                html += '      <button type="button" class="btn btn-sm btn-outline-secondary border-0 px-2 py-1 small fw-semibold text-capitalize" data-action="zoomOut" title="Show broader date range" aria-label="Show broader date range">';
+                html += title;
+                html += '        <i class="bi bi-chevron-down ms-1 ml-1" aria-hidden="true"></i>';
+                html += '      </button>';
             }
         })();
         html += '    </div>';
@@ -713,24 +722,19 @@
                 const S = state.rangeStart;
                 const E = state.selected;
 
-                // Case 3 (toggle off): clicking exactly on current start or end clears that edge
+                // Clicking exactly on the current start or end clears that edge.
+                // The remaining edge stays as an anchor for the next click.
                 if (S && isSameDay(d, S)) {
-                    // If only start existed (no end), allow immediate re-set of start on same click
-                    if (!E) {
-                        // Interpret as re-pick of start
-                        state.rangeStart = d;
-                        updatePanel(state);
-                        return;
-                    }
-                    // With both edges present: clear start only; user will pick a new start next
                     state.rangeStart = null;
                     updatePanel(state);
+                    emit(state, 'changeDate', { value: [null, E || null] });
                     return;
                 }
                 if (E && isSameDay(d, E)) {
                     state.selected = null; // remove end
                     // If next click is before the remaining start, we will swap accordingly below
                     updatePanel(state);
+                    emit(state, 'changeDate', { value: [S || null, null] });
                     return;
                 }
 
@@ -743,8 +747,8 @@
                     // Start picked, end open
                     if (d < S) {
                         // Click before current start → interpret as new start (swap behavior)
-                        state.selected = S; // previous start becomes end
-                        state.rangeStart = d; // new start
+                        state.rangeStart = d;
+                        state.selected = S;
                     } else {
                         // After (or same day) → set as end
                         state.selected = d;
@@ -780,13 +784,14 @@
                             state.selected = d;
                         }
                     }
+                    normalizeRangeState(state);
                     // Update values (display + hidden)
                     // Note: Do NOT auto-close when adjusting an existing range to allow fine tuning.
                     updatePanel(state);
                 }
+                normalizeRangeState(state);
                 // Emit changeDate for any pick in range mode (edge moved or set)
-                const [a, b] = clampRange(state.rangeStart, state.selected);
-                emit(state, 'changeDate', { value: [a || null, b || null] });
+                emit(state, 'changeDate', { value: [state.rangeStart || null, state.selected || null] });
             } else {
                 state.selected = d;
                 // Update values (display + hidden)
@@ -815,16 +820,14 @@
             const dispOpts = $.extend({}, state.opts, { format: 'locale' });
             const toLocalISO = (d) => d ? (function(x){ const y=x.getFullYear(); const m=String(x.getMonth()+1).padStart(2,'0'); const day=String(x.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; })(d) : '';
             if (isRange) {
-                // Mirror single-edge ranges into both inputs:
-                // - Only start set  -> end mirrors start
-                // - Only end set    -> start mirrors end
+                // Keep incomplete ranges open in the outputs:
+                // - Only start set  -> end remains empty
+                // - Only end set    -> start remains empty
                 // - Both set        -> clamp to [start, end]
                 const S = state.rangeStart;
                 const E = state.selected;
                 let a = S || null, b = E || null;
-                if (S && !E) { b = S; }
-                else if (!S && E) { a = E; }
-                else if (S && E) { const pair = clampRange(S, E); a = pair[0]; b = pair[1]; }
+                if (S && E) { const pair = clampRange(S, E); a = pair[0]; b = pair[1]; }
 
                 if (state.$display) updateDisplay(state);
                 if (state.$inStart) state.$inStart.val(toLocalISO(a));
@@ -976,6 +979,7 @@
         state.selected = initial.end;
         if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
         if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
+        normalizeRangeState(state);
 
         const firstVisible = state.rangeStart || state.selected;
         if (firstVisible) {
@@ -1099,6 +1103,7 @@
                 // Prevent disabled dates from being set via API
                 if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
                 if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
+                normalizeRangeState(state);
             } else {
                 state.selected = a ? toDateOrNull(a) : null;
                 if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
@@ -1116,6 +1121,7 @@
                 // Prevent disabled dates from being set via API
                 if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
                 if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
+                normalizeRangeState(state);
             } else if (dateOrRange) {
                 state.selected = startOfDay(new Date(dateOrRange));
                 if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,11 +7,25 @@
     <link href="../vendor/twbs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../vendor/twbs/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="bg-body text-body">
 <div class="container py-4">
-    <header class="text-center mb-4">
-        <h1 class="fw-semibold">Bootstrap Datepicker</h1>
-        <p class="text-muted mb-0">Kompakte Demo der API – modern, aufgeräumt, einspaltig</p>
+    <header class="mb-4">
+        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+            <div class="text-center flex-grow-1">
+                <h1 class="fw-semibold">Bootstrap Datepicker</h1>
+                <p class="text-muted mb-0">Kompakte Demo der API – modern, aufgeräumt, einspaltig</p>
+            </div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Theme">
+                <button type="button" class="btn btn-outline-secondary active" data-theme-value="light" aria-pressed="true">
+                    <i class="bi bi-sun-fill" aria-hidden="true"></i>
+                    <span class="d-none d-sm-inline ms-1 ml-1">Light</span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-theme-value="dark" aria-pressed="false">
+                    <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+                    <span class="d-none d-sm-inline ms-1 ml-1">Dark</span>
+                </button>
+            </div>
+        </div>
     </header>
 
     <form id="demoForm">
@@ -144,6 +158,33 @@
     <script src="../dist/bs-datepicker.js"></script>
     <script>
         $(function () {
+            const themeStorageKey = 'bs-datepicker-demo-theme';
+            const $themeButtons = $('[data-theme-value]');
+
+            function setTheme(theme) {
+                const normalized = theme === 'dark' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-bs-theme', normalized);
+                $themeButtons.each(function () {
+                    const isActive = $(this).data('theme-value') === normalized;
+                    $(this).toggleClass('active', isActive).attr('aria-pressed', isActive ? 'true' : 'false');
+                });
+                try {
+                    window.localStorage.setItem(themeStorageKey, normalized);
+                } catch (err) {
+                    // Ignore storage failures in private browsing modes.
+                }
+            }
+
+            let storedTheme = 'light';
+            try {
+                storedTheme = window.localStorage.getItem(themeStorageKey) || 'light';
+            } catch (err) {}
+            setTheme(storedTheme);
+
+            $themeButtons.on('click', function () {
+                setTheme($(this).data('theme-value'));
+            });
+
             function fmtLocalISO(d){
                 if(!d) return '';
                 var y=d.getFullYear();
