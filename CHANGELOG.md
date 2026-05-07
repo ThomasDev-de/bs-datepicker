@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2 - 2026-05-07
+
+### Changed
+
+- Improved small-device responsiveness for month tiles in inline and dropdown mode so a single calendar fits the viewport width.
+- Refined header layout behavior on small screens to keep it in one line and prevent overflow in range mode.
+- Optimized year/decade grid responsiveness on small devices (better column behavior and wrapping labels).
+- Updated weekday rendering on small screens to use narrow localized labels and avoid broken line wraps.
+
 ## 1.1.1 - 2026-05-06
 
 ### Added

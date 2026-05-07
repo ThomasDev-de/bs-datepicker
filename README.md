@@ -2,7 +2,7 @@
 
 A jQuery-based datepicker plugin with a Bootstrap look & feel.
 
-Current version: `1.1.1`
+Current version: `1.1.2`
 
 ![preview](/demo/Bootstrap-Datepicker-Demo.png)
 
@@ -13,6 +13,7 @@ Highlights
 - Inline or dropdown rendering
 - Week start Monday or Sunday
 - Multi-month view (`months`) with responsive layout (tiles wrap on small screens)
+- Improved mobile responsiveness for header, weekday labels, and year/decade grids
 - Clickable header navigation with year and decade grids for fast jumps across many years
 - Public method `setRange(boolean)` to toggle range mode at runtime
 - Visible display as a clickable wrapper (no input) with calendar icon in dropdown mode; in inline mode no separate wrapper

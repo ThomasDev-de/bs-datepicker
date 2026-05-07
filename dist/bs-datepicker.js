@@ -9,7 +9,7 @@
  * GitHub: https://github.com/ThomasDev-de/bs-datepicker
  *
  * Author: Thomas Kirsch <t.kirsch@webcito.de>
- * Version: 1.1.1
+ * Version: 1.1.2
  *
  * Dependencies:
  * - jQuery >= 3.x
@@ -66,7 +66,7 @@
 
     // Defaults
     $.bsDatepicker = {
-        version: '1.1.1',
+        version: '1.1.2',
         default: {
             locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
@@ -226,8 +226,8 @@
         if (dis.datesSet && dis.datesSet.has(t)) return true;
         return false;
     }
-    function getWeekdayNames(locale, startOnSunday) {
-        const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    function getWeekdayNames(locale, startOnSunday, width) {
+        const fmt = new Intl.DateTimeFormat(locale, { weekday: width || 'short' });
         const base = new Date(2021, 7, 1); // arbitrary Sunday
         const days = [];
         for (let i = 0; i < 7; i++) {
@@ -329,7 +329,8 @@
 
     function renderOneMonthBlock(currMonthDate, state) {
         const { opts, selected, rangeStart } = state;
-        const weekdays = getWeekdayNames(opts.locale, opts.startOnSunday);
+        const weekdaysShort = getWeekdayNames(opts.locale, opts.startOnSunday, 'short');
+        const weekdaysNarrow = getWeekdayNames(opts.locale, opts.startOnSunday, 'narrow');
         const title = getMonthYearTitle(currMonthDate, opts.locale);
         const cells = buildCalendarGrid(currMonthDate, opts);
         const today = startOfDay(new Date());
@@ -346,7 +347,12 @@
         // Use table-layout: fixed to keep 7 equal columns and prevent width jumps when locale changes
         html += '    <table class="table table-sm table-borderless mb-0 text-center align-middle user-select-none w-100" style="table-layout:fixed">';
         html += '      <thead><tr>';
-        weekdays.forEach(w => { html += '<th class="text-muted small">' + w + '</th>'; });
+        for (let i = 0; i < 7; i++) {
+            html += '<th class="text-muted small" style="white-space:nowrap;">';
+            html += '<span class="d-inline d-sm-none">' + weekdaysNarrow[i] + '</span>';
+            html += '<span class="d-none d-sm-inline">' + weekdaysShort[i] + '</span>';
+            html += '</th>';
+        }
         html += '      </tr></thead>';
         html += '      <tbody>';
         // Dynamic number of rows: only as many rows as the month needs
@@ -458,8 +464,8 @@
         const rangeStartYear = state.rangeStart ? state.rangeStart.getFullYear() : null;
 
         let html = '';
-        html += '<div class="dp-year-grid p-2" style="width:310px; max-width:100%">';
-        html += '  <div class="row row-cols-3 g-1">';
+        html += '<div class="dp-year-grid p-2" style="width:100%; max-width:310px; min-width:0;">';
+        html += '  <div class="row row-cols-2 row-cols-sm-3 g-1">';
         for (let i = -1; i <= 10; i++) {
             const year = decadeStart + i;
             const muted = year < decadeStart || year > decadeStart + 9;
@@ -467,6 +473,7 @@
             const selected = selectedYear === year || rangeStartYear === year;
             let cls = 'btn btn-sm w-100 border-0';
             let visualStyle = '';
+            visualStyle += 'white-space:normal; overflow-wrap:anywhere; line-height:1.2;';
             if (selected) {
                 cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
                 visualStyle += 'background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.15)); color: var(--bs-primary-text-emphasis, #0a58ca); border:1px solid var(--bs-primary, #0d6efd); font-weight:600;';
@@ -495,8 +502,8 @@
         const rangeStartYear = state.rangeStart ? state.rangeStart.getFullYear() : null;
 
         let html = '';
-        html += '<div class="dp-decade-grid p-2" style="width:310px; max-width:100%">';
-        html += '  <div class="row row-cols-3 g-1">';
+        html += '<div class="dp-decade-grid p-2" style="width:100%; max-width:310px; min-width:0;">';
+        html += '  <div class="row row-cols-2 row-cols-sm-3 g-1">';
         for (let i = -1; i <= 10; i++) {
             const decadeStart = centuryStart + (i * 10);
             const decadeEnd = decadeStart + 9;
@@ -507,6 +514,7 @@
             const isCurrentDecade = todayYear >= decadeStart && todayYear <= decadeEnd;
             let cls = 'btn btn-sm w-100 border-0';
             let visualStyle = '';
+            visualStyle += 'white-space:normal; overflow-wrap:anywhere; line-height:1.2;';
             if (selected) {
                 cls += ' bg-primary-subtle text-primary-emphasis fw-semibold border border-primary';
                 visualStyle += 'background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.15)); color: var(--bs-primary-text-emphasis, #0a58ca); border:1px solid var(--bs-primary, #0d6efd); font-weight:600;';
@@ -555,15 +563,16 @@
         // Added overflow-hidden to prevent scrollbars during layout shifts
         var panelCls = opts.inline ? 'bg-transparent p-2 d-inline-block' : 'bg-body border rounded-3 shadow p-1';
         html += '<div class="' + panelCls + '" style="overflow:hidden">';
-        // Compact header: single row with three zones
-        html += '  <div class="d-flex align-items-center justify-content-between gap-2 pb-2 mx-2' + (opts.inline ? '' : ' border-bottom') + '">';
-        // Left: PrevYear / Prev
-        html += '    <div class="d-flex align-items-center gap-1">';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prevYear" title="Previous range" aria-label="Previous range"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="prev" title="Previous" aria-label="Previous"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
-        html += '    </div>';
-        // Center: title (navigation – keep short format to stay compact)
-        html += '    <div class="text-center flex-grow-1">';
+        // Single-row responsive header across all breakpoints
+        html += '  <div class="pb-2 mx-2' + (opts.inline ? '' : ' border-bottom') + '">';
+        html += '    <div class="d-flex align-items-center justify-content-between gap-1 gap-sm-2">';
+        // Left controls
+        html += '      <div class="d-flex align-items-center gap-1 flex-shrink-0">';
+        html += '        <button type="button" class="btn btn-sm border-0 p-1 d-none d-sm-inline-block" data-action="prevYear" title="Previous range" aria-label="Previous range"><i class="' + (opts.icons && (opts.icons.prevYear || opts.icons.prev) || $.bsDatepicker.default.icons.prevYear) + '"></i></button>';
+        html += '        <button type="button" class="btn btn-sm border-0 p-1" data-action="prev" title="Previous" aria-label="Previous"><i class="' + (opts.icons && opts.icons.prev || $.bsDatepicker.default.icons.prev) + '"></i></button>';
+        html += '      </div>';
+        // Center title
+        html += '      <div class="text-center flex-grow-1 px-1" style="min-width:0;">';
         (function(){
             let title = '';
             if (viewMode === 'days') {
@@ -579,21 +588,22 @@
                 title = start + '-' + (start + 99);
             }
             if (viewMode === 'decades') {
-                html += '      <div class="small fw-semibold text-capitalize">' + title + '</div>';
+                html += '        <div class="small fw-semibold text-capitalize" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + title + '</div>';
             } else {
-                html += '      <button type="button" class="btn btn-sm btn-outline-secondary border-0 px-2 py-1 small fw-semibold text-capitalize" data-action="zoomOut" title="Show broader date range" aria-label="Show broader date range">';
+                html += '        <button type="button" class="btn btn-sm btn-outline-secondary border-0 px-1 px-sm-2 py-1 small fw-semibold text-capitalize" style="max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" data-action="zoomOut" title="Show broader date range" aria-label="Show broader date range">';
                 html += title;
-                html += '        <i class="bi bi-chevron-down ms-1 ml-1" aria-hidden="true"></i>';
-                html += '      </button>';
+                html += '          <i class="bi bi-chevron-down ms-1 ml-1" aria-hidden="true"></i>';
+                html += '        </button>';
             }
         })();
-        html += '    </div>';
-        // Right: Next / NextYear / Today / Clear as icons
-        html += '    <div class="d-flex align-items-center gap-1">';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="next" title="Next" aria-label="Next"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="nextYear" title="Next range" aria-label="Next range"><i class="' + (opts.icons && (opts.icons.nextYear || opts.icons.next) || $.bsDatepicker.default.icons.nextYear) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="today" title="Today" aria-label="Today"><i class="' + (opts.icons && opts.icons.today || $.bsDatepicker.default.icons.today) + '"></i></button>';
-        html += '      <button type="button" class="btn btn-sm border-0 p-1" data-action="clear" title="Clear" aria-label="Clear"><i class="' + (opts.icons && opts.icons.clear || $.bsDatepicker.default.icons.clear) + '"></i></button>';
+        html += '      </div>';
+        // Right controls
+        html += '      <div class="d-flex align-items-center gap-1 flex-shrink-0">';
+        html += '        <button type="button" class="btn btn-sm border-0 p-1" data-action="next" title="Next" aria-label="Next"><i class="' + (opts.icons && opts.icons.next || $.bsDatepicker.default.icons.next) + '"></i></button>';
+        html += '        <button type="button" class="btn btn-sm border-0 p-1 d-none d-sm-inline-block" data-action="nextYear" title="Next range" aria-label="Next range"><i class="' + (opts.icons && (opts.icons.nextYear || opts.icons.next) || $.bsDatepicker.default.icons.nextYear) + '"></i></button>';
+        html += '        <button type="button" class="btn btn-sm border-0 p-1 d-none d-sm-inline-block" data-action="today" title="Today" aria-label="Today"><i class="' + (opts.icons && opts.icons.today || $.bsDatepicker.default.icons.today) + '"></i></button>';
+        html += '        <button type="button" class="btn btn-sm border-0 p-1 d-none d-sm-inline-block" data-action="clear" title="Clear" aria-label="Clear"><i class="' + (opts.icons && opts.icons.clear || $.bsDatepicker.default.icons.clear) + '"></i></button>';
+        html += '      </div>';
         html += '    </div>';
         html += '  </div>';
         html += '  <div class="pt-2">';
@@ -624,13 +634,13 @@
             // On narrow screens they wrap to one column; on wider screens they stay side-by-side.
             // We use a max-width on the container that matches the sum of months to prevent excessive stretching,
             // but allow it to be smaller (100%) for responsiveness.
-            const monthsWrapStyle = 'max-width: 100%; min-width: ' + (months > 1 ? '310px' : 'auto') + ';';
+            const monthsWrapStyle = 'width:100%; max-width: 100%; min-width: 0;';
             // Use d-flex instead of d-inline-flex for better responsiveness in various containers
             html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="' + monthsWrapStyle + '">';
             for (let i = 0; i < months; i++) {
                 // Fixed width for the month tile, but allow it to shrink if needed (though 310px is already quite narrow)
                 // Added padding/gap via helper classes: p-2 ensures spacing when wrapping
-                html += '      <div class="dp-month p-2" style="width:310px; flex:0 0 310px; max-width: 100%">';
+                html += '      <div class="dp-month p-2" style="width:100%; flex:1 1 310px; max-width:310px; min-width:0;">';
                 html += renderOneMonthBlock(addMonths(current, i), state);
                 html += '      </div>';
             }
@@ -927,16 +937,23 @@
 
         // Calculate how many months can fit side-by-side in the current viewport
         const viewportWidth = $(window).width();
-        
-        // tileWidth is 310px as defined in renderTemplate. 
-        // We use a fixed value here because measurement might fail if hidden or during animation.
-        const effectiveTileWidth = 310;
+        const outerWidth = $outer.outerWidth() || 0;
+        const effectiveTileWidth = Math.min(310, Math.max(220, outerWidth - 24));
 
         const bs = getComputedStyle($outer[0]);
         const paddingX = (parseFloat(bs.paddingLeft) || 0) + (parseFloat(bs.paddingRight) || 0);
         
         // Available space for tiles (viewport minus some margin)
         const availableSpace = viewportWidth - 20;
+
+        // On very small viewports force single-column width so one calendar fits the screen.
+        if (availableSpace <= effectiveTileWidth + paddingX + 10) {
+            state.$container.css({
+                width: 'auto',
+                maxWidth: '95vw'
+            });
+            return;
+        }
 
         // Calculate how many months fit in one row
         const monthsInRow = Math.max(1, Math.min($months.length, Math.floor((availableSpace - paddingX) / effectiveTileWidth)));
