@@ -390,7 +390,7 @@
                 // Subtle highlighting classes (BS5); inline styles below add BS4-compatible fallbacks
                 let btnCls = 'btn btn-sm w-100 border-0 rounded-0 ';
                 const inRangeAny = isStart || isEnd || isBetween;
-                let visualStyle = '';
+                let visualStyle = 'white-space:nowrap; min-width:2em;';
 
                 // Subtle theme (always on)
                 if (isRange && !isSingleInRange) {
@@ -630,17 +630,16 @@
             html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="max-width:100%; min-width:auto;">';
             html += renderDecadeGrid(state);
         } else {
-            // Month tiles: flex-wrap allows responsive behavior
-            // On narrow screens they wrap to one column; on wider screens they stay side-by-side.
-            // We use a max-width on the container that matches the sum of months to prevent excessive stretching,
-            // but allow it to be smaller (100%) for responsiveness.
+            // Month tiles: flex-wrap allows responsive behavior. Keep the tile
+            // compact enough that dropdowns can fit narrow viewports without
+            // forcing horizontal page overflow.
             const monthsWrapStyle = 'width:100%; max-width: 100%; min-width: 0;';
             // Use d-flex instead of d-inline-flex for better responsiveness in various containers
             html += '    <div class="dp-months d-flex flex-wrap align-items-start justify-content-center" style="' + monthsWrapStyle + '">';
             for (let i = 0; i < months; i++) {
-                // Fixed width for the month tile, but allow it to shrink if needed (though 310px is already quite narrow)
+                // Compact fixed basis, with shrink room for sub-320px devices.
                 // Added padding/gap via helper classes: p-2 ensures spacing when wrapping
-                html += '      <div class="dp-month p-2" style="width:100%; flex:1 1 310px; max-width:310px; min-width:0;">';
+                html += '      <div class="dp-month p-2" style="width:min(100%, 280px); flex:0 1 280px; max-width:280px; min-width:0;">';
                 html += renderOneMonthBlock(addMonths(current, i), state);
                 html += '      </div>';
             }
@@ -866,7 +865,7 @@
         
         // Initial positioning
         state.$container
-            .css({ position: 'absolute', top: off.top + h + 4, left: off.left, zIndex: state.opts.zIndex, width: 'auto' })
+            .css({ position: 'absolute', top: off.top + h + 4, left: off.left, zIndex: state.opts.zIndex, width: 'auto', maxWidth: 'calc(100vw - 16px)' })
             .addClass('show')
             .show();
 
@@ -874,10 +873,11 @@
         applyCalculatedWidth(state);
 
         // Check if it overflows on the right and adjust position if necessary
+        const viewportGap = 8;
         const viewportWidth = $(window).width();
         const containerWidth = state.$container.outerWidth();
-        if (off.left + containerWidth > viewportWidth - 10) {
-            const newLeft = Math.max(10, viewportWidth - containerWidth - 10);
+        if (off.left + containerWidth > viewportWidth - viewportGap) {
+            const newLeft = Math.max(viewportGap, viewportWidth - containerWidth - viewportGap);
             state.$container.css('left', newLeft);
         }
 
@@ -921,8 +921,8 @@
                         const cWidth = state.$container.outerWidth();
                         
                         let newLeft = off.left;
-                        if (off.left + cWidth > vWidth - 10) {
-                            newLeft = Math.max(10, vWidth - cWidth - 10);
+                        if (off.left + cWidth > vWidth - 8) {
+                            newLeft = Math.max(8, vWidth - cWidth - 8);
                         }
                         
                         state.$container.css({
@@ -936,21 +936,22 @@
         }
 
         // Calculate how many months can fit side-by-side in the current viewport
+        const viewportGap = 8;
         const viewportWidth = $(window).width();
         const outerWidth = $outer.outerWidth() || 0;
-        const effectiveTileWidth = Math.min(310, Math.max(220, outerWidth - 24));
+        const effectiveTileWidth = Math.min(280, Math.max(220, outerWidth - 24));
 
         const bs = getComputedStyle($outer[0]);
         const paddingX = (parseFloat(bs.paddingLeft) || 0) + (parseFloat(bs.paddingRight) || 0);
         
-        // Available space for tiles (viewport minus some margin)
-        const availableSpace = viewportWidth - 20;
+        // Available space for tiles (viewport minus a small safety margin)
+        const availableSpace = Math.max(220, viewportWidth - (viewportGap * 2));
 
         // On very small viewports force single-column width so one calendar fits the screen.
         if (availableSpace <= effectiveTileWidth + paddingX + 10) {
             state.$container.css({
                 width: 'auto',
-                maxWidth: '95vw'
+                maxWidth: 'calc(100vw - 16px)'
             });
             return;
         }
@@ -964,10 +965,11 @@
         // Ensure it doesn't exceed total content width if all months are side-by-side
         const maxContentWidth = Math.ceil(($months.length * effectiveTileWidth) + paddingX + 10);
         targetWidth = Math.min(targetWidth, maxContentWidth);
+        targetWidth = Math.min(targetWidth, availableSpace);
 
         state.$container.css({ 
             width: targetWidth + 'px',
-            maxWidth: '95vw'
+            maxWidth: 'calc(100vw - 16px)'
         });
     }
     function hideDropdown(state) {
@@ -1009,7 +1011,7 @@
             state.$container = $('<div class="bs-datepicker inline border p-2 d-inline-block w-auto" style="max-width:100%"></div>').appendTo(state.$root);
         } else {
             // --bs-dropdown-min-width defaults to 10rem → set to auto for content-width dropdowns
-            state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto; max-width:95vw;"></div>').appendTo('body');
+            state.$container = $('<div class="bs-datepicker dropdown-menu p-0" style="display:none; --bs-dropdown-min-width:auto; max-width:calc(100vw - 16px);"></div>').appendTo('body');
         }
         state.$panel = $('<div></div>').appendTo(state.$container);
         updatePanel(state);

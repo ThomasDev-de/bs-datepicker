@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Prevented dropdown calendars from exceeding the viewport width and tightened month tile sizing so multi-month dropdowns wrap earlier on small devices.
+
 ## 1.1.2 - 2026-05-07
 
 ### Changed
