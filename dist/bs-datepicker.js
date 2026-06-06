@@ -390,7 +390,7 @@
                 // Subtle highlighting classes (BS5); inline styles below add BS4-compatible fallbacks
                 let btnCls = 'btn btn-sm w-100 border-0 rounded-0 ';
                 const inRangeAny = isStart || isEnd || isBetween;
-                let visualStyle = 'white-space:nowrap; min-width:2em;';
+                let visualStyle = 'box-sizing:border-box; display:flex; align-items:center; justify-content:center; height:2rem; min-height:2rem; padding:0; line-height:1; white-space:nowrap;';
 
                 // Subtle theme (always on)
                 if (isRange && !isSingleInRange) {

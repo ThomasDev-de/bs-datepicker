@@ -6,9 +6,36 @@
     <title>Bootstrap Datepicker Demo</title>
     <link href="../vendor/twbs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../vendor/twbs/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        @media (max-width: 575.98px) {
+            .demo-shell {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .demo-grid {
+                --bs-gutter-y: .75rem;
+                --bs-gutter-x: 0;
+            }
+
+            .demo-card-body {
+                padding: .75rem !important;
+            }
+
+            .demo-card {
+                border-radius: 0;
+            }
+
+            .demo-card .bs-datepicker.inline {
+                border-left: 0 !important;
+                border-right: 0 !important;
+                padding: 0 !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-body text-body">
-<div class="container py-4">
+<div class="container py-3 py-sm-4 demo-shell">
     <header class="mb-4">
         <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
             <div class="text-center flex-grow-1">
@@ -29,10 +56,10 @@
     </header>
 
     <form id="demoForm">
-    <div class="row justify-content-center g-4">
+    <div class="row justify-content-center g-4 demo-grid">
         <div class="col-12 col-lg-8">
-            <section class="card border-0 shadow-sm">
-                <div class="card-body p-4">
+            <section class="card border-0 shadow-sm demo-card">
+                <div class="card-body p-4 demo-card-body">
                     <h5 class="mb-3">Single (Dropdown)</h5>
                     <div class="datepicker mb-3" id="singleDropdown">
                         <input type="hidden" name="single">
@@ -65,8 +92,8 @@
         </div>
 
         <div class="col-12 col-lg-8">
-            <section class="card border-0 shadow-sm">
-                <div class="card-body p-4">
+            <section class="card border-0 shadow-sm demo-card">
+                <div class="card-body p-4 demo-card-body">
                     <h5 class="mb-3">Range Inline (3 months)</h5>
                     <div class="datepicker mb-3" id="rangeInline">
                         <input type="hidden" name="range_start">
@@ -88,8 +115,8 @@
         </div>
 
         <div class="col-12 col-lg-8">
-            <section class="card border-0 shadow-sm">
-                <div class="card-body p-4">
+            <section class="card border-0 shadow-sm demo-card">
+                <div class="card-body p-4 demo-card-body">
                     <h5 class="mb-3">Single Inline</h5>
                     <div class="datepicker mb-3" id="singleInline">
                         <input type="hidden" name="single_inline">
@@ -108,8 +135,8 @@
         </div>
 
         <div class="col-12 col-lg-8">
-            <section class="card border-0 shadow-sm">
-                <div class="card-body p-4">
+            <section class="card border-0 shadow-sm demo-card">
+                <div class="card-body p-4 demo-card-body">
                     <h5 class="mb-3">Range (Dropdown)</h5>
                     <div class="datepicker mb-3" id="rangeDropdown">
                         <input type="hidden" name="rd_start">
@@ -137,8 +164,8 @@
         </div>
 
         <div class="col-12 col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
+            <div class="card border-0 shadow-sm demo-card">
+                <div class="card-body p-4 demo-card-body">
                     <h5 class="mb-3">Submit Beispiel</h5>
                     <p class="text-muted small">Die Hidden-Inputs werden mit ISO-Format befüllt.</p>
                     <button type="submit" class="btn btn-primary">
