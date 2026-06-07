@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-bs-theme="light">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +7,57 @@
     <link href="../vendor/twbs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../vendor/twbs/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --bs-datepicker-primary: #0d6efd;
+        }
+
+        [data-bs-theme="dark"] {
+            --bs-datepicker-primary: #375a7f;
+        }
+
+        body {
+            background-color: var(--bs-tertiary-bg);
+        }
+
+        .demo-shell {
+            max-width: 1000px;
+        }
+
+        .demo-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: 1px solid var(--bs-border-color-translucent);
+        }
+
+        .demo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important;
+        }
+
+        .btn-group-xs > .btn, .btn-xs {
+            padding: .25rem .4rem;
+            font-size: .75rem;
+            line-height: 1;
+            border-radius: .2rem;
+        }
+
+        .method-group {
+            background: var(--bs-light);
+            border-radius: var(--bs-border-radius);
+            padding: 1rem;
+        }
+
+        [data-bs-theme="dark"] .method-group {
+            background: rgba(255,255,255,0.05);
+        }
+
+        [data-bs-theme="dark"] .bg-white {
+            background-color: var(--bs-body-bg) !important;
+        }
+
+        .tracking-wider {
+            letter-spacing: 0.05em;
+        }
+
         @media (max-width: 575.98px) {
             .demo-shell {
                 padding-left: 0;
@@ -36,56 +87,68 @@
 </head>
 <body class="bg-body text-body">
 <div class="container py-3 py-sm-4 demo-shell">
-    <header class="mb-4">
-        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
-            <div class="text-center flex-grow-1">
-                <h1 class="fw-semibold">Bootstrap Datepicker</h1>
-                <p class="text-muted mb-0">Kompakte Demo der API – modern, aufgeräumt, einspaltig</p>
-            </div>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Theme">
-                <button type="button" class="btn btn-outline-secondary active" data-theme-value="light" aria-pressed="true">
-                    <i class="bi bi-sun-fill" aria-hidden="true"></i>
-                    <span class="d-none d-sm-inline ms-1 ml-1">Light</span>
-                </button>
-                <button type="button" class="btn btn-outline-secondary" data-theme-value="dark" aria-pressed="false">
-                    <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
-                    <span class="d-none d-sm-inline ms-1 ml-1">Dark</span>
-                </button>
+    <header class="py-5 mb-5 border-bottom bg-white shadow-sm rounded-4 mt-4">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h1 class="display-5 fw-bold text-primary mb-0"><i class="bi bi-calendar3 me-2"></i>Bootstrap Datepicker</h1>
+                    <p class="lead text-muted mb-0">Die moderne & flexible Datepicker-Lösung für Bootstrap 5.</p>
+                </div>
             </div>
         </div>
     </header>
 
-    <form id="demoForm">
+    <div class="container demo-shell">
+        <form id="demoForm">
     <div class="row justify-content-center g-4 demo-grid">
         <div class="col-12 col-lg-8">
             <section class="card border-0 shadow-sm demo-card">
                 <div class="card-body p-4 demo-card-body">
-                    <h5 class="mb-3">Single (Dropdown)</h5>
-                    <div class="datepicker mb-3" id="singleDropdown">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
+                            <i class="bi bi-calendar-event fs-4"></i>
+                        </div>
+                        <h5 class="mb-0 text-uppercase fw-bold tracking-wider">Single (Dropdown)</h5>
+                    </div>
+                    <div class="datepicker mb-4" id="singleDropdown">
                         <input type="hidden" name="single">
                     </div>
-                    <div class="mb-2 small text-uppercase text-muted">Disabled Presets</div>
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPast">Lock past</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFuture">Lock future</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnHolidays">Lock holidays</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDisableDates">Test window</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearDis">Clear locks</button>
-                    </div>
-                    <div class="mb-2 small text-uppercase text-muted">Methods</div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_GetDate">getDate()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_SetDateToday">setDate(today)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_ValGet">val(get)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_ValSetToday">val(set today)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_GetDisabled">getDisableDates()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_SetMin">setMin(today)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_SetMax">setMax(+30d)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_ClearDisabled">clearDisableDates()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_LocaleEN">setLocale(en-US)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSD_LocaleDE">setLocale(de-DE)</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnSD_Destroy">destroy()</button>
-                        <button type="button" class="btn btn-sm btn-outline-success" id="btnSD_Reinit">re-init</button>
+                    
+                    <div class="accordion border-0" id="accordionSingleDropdown">
+                        <div class="accordion-item border-0 bg-transparent">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none text-muted small text-uppercase fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSDMethods">
+                                    <i class="bi bi-gear me-2"></i> API & Presets
+                                </button>
+                            </h2>
+                            <div id="collapseSDMethods" class="accordion-collapse collapse" data-bs-parent="#accordionSingleDropdown">
+                                <div class="accordion-body px-0 pt-3">
+                                    <div class="mb-2 small text-muted fw-bold text-uppercase">Disabled Presets</div>
+                                    <div class="d-flex flex-wrap gap-2 mb-4">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnPast">Lock past</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnFuture">Lock future</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnHolidays">Lock holidays</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnDisableDates">Test window</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnClearDis">Clear locks</button>
+                                    </div>
+                                    <div class="mb-2 small text-muted fw-bold text-uppercase">Methods</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_GetDate">getDate()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_SetDateToday">setDate(today)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_ValGet">val(get)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_ValSetToday">val(set today)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_GetDisabled">getDisableDates()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_SetMin">setMin(today)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_SetMax">setMax(+30d)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_ClearDisabled">clearDisableDates()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_LocaleEN">setLocale(en-US)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSD_LocaleDE">setLocale(de-DE)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-danger" id="btnSD_Destroy">destroy()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-success" id="btnSD_Reinit">re-init</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -94,21 +157,39 @@
         <div class="col-12 col-lg-8">
             <section class="card border-0 shadow-sm demo-card">
                 <div class="card-body p-4 demo-card-body">
-                    <h5 class="mb-3">Range Inline (3 months)</h5>
-                    <div class="datepicker mb-3" id="rangeInline">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
+                            <i class="bi bi-calendar-range fs-4"></i>
+                        </div>
+                        <h5 class="mb-0 text-uppercase fw-bold tracking-wider">Range Inline (3 months)</h5>
+                    </div>
+                    <div class="datepicker mb-4" id="rangeInline">
                         <input type="hidden" name="range_start">
                         <input type="hidden" name="range_end">
                     </div>
-                    <div class="mb-2 small text-uppercase text-muted">Methods</div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_GetDate">getDate()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_SetQ1">setDate(Q1 2025)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_GetDisabled">getDisableDates()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_SetMin">setMin(2025-01-01)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_SetMax">setMax(2025-12-31)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_ClearDisabled">clearDisableDates()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_LocaleEN">setLocale(en-US)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRI_LocaleDE">setLocale(de-DE)</button>
+                    
+                    <div class="accordion border-0" id="accordionRangeInline">
+                        <div class="accordion-item border-0 bg-transparent">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none text-muted small text-uppercase fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRIMethods">
+                                    <i class="bi bi-gear me-2"></i> API Methods
+                                </button>
+                            </h2>
+                            <div id="collapseRIMethods" class="accordion-collapse collapse" data-bs-parent="#accordionRangeInline">
+                                <div class="accordion-body px-0 pt-3">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_GetDate">getDate()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_SetQ1">setDate(Q1 2025)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_GetDisabled">getDisableDates()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_SetMin">setMin(2025-01-01)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_SetMax">setMax(2025-12-31)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_ClearDisabled">clearDisableDates()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_LocaleEN">setLocale(en-US)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRI_LocaleDE">setLocale(de-DE)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -117,18 +198,37 @@
         <div class="col-12 col-lg-8">
             <section class="card border-0 shadow-sm demo-card">
                 <div class="card-body p-4 demo-card-body">
-                    <h5 class="mb-3">Single Inline</h5>
-                    <div class="datepicker mb-3" id="singleInline">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-info bg-opacity-10 text-info p-3 rounded-3 me-3">
+                            <i class="bi bi-calendar3 fs-4"></i>
+                        </div>
+                        <h5 class="mb-0 text-uppercase fw-bold tracking-wider">Single Inline</h5>
+                    </div>
+                    <div class="datepicker mb-4" id="singleInline">
                         <input type="hidden" name="single_inline">
                     </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetTodayInline">Set today</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadInline">Read value</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearInline">Clear</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_GetDate">getDate()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_SetDateToday">setDate(today)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_LocaleEN">setLocale(en-US)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSI_LocaleDE">setLocale(de-DE)</button>
+                    
+                    <div class="accordion border-0" id="accordionSingleInline">
+                        <div class="accordion-item border-0 bg-transparent">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none text-muted small text-uppercase fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSIMethods">
+                                    <i class="bi bi-gear me-2"></i> API Methods
+                                </button>
+                            </h2>
+                            <div id="collapseSIMethods" class="accordion-collapse collapse" data-bs-parent="#accordionSingleInline">
+                                <div class="accordion-body px-0 pt-3">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnSetTodayInline">Set today</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnReadInline">Read value</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnClearInline">Clear</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSI_GetDate">getDate()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSI_SetDateToday">setDate(today)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSI_LocaleEN">setLocale(en-US)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSI_LocaleDE">setLocale(de-DE)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -137,47 +237,70 @@
         <div class="col-12 col-lg-8">
             <section class="card border-0 shadow-sm demo-card">
                 <div class="card-body p-4 demo-card-body">
-                    <h5 class="mb-3">Range (Dropdown)</h5>
-                    <div class="datepicker mb-3" id="rangeDropdown">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-3 me-3">
+                            <i class="bi bi-calendar2-range fs-4"></i>
+                        </div>
+                        <h5 class="mb-0 text-uppercase fw-bold tracking-wider">Range (Dropdown)</h5>
+                    </div>
+                    <div class="datepicker mb-4" id="rangeDropdown">
                         <input type="hidden" name="rd_start">
                         <input type="hidden" name="rd_end">
                     </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSetQ1">Set Q1 2025</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReadRange">Read value</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearRange">Clear</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnYear2025">Allow only 2025</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_GetDate">getDate()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_ValGet">val(get)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_ValSet">val(set Q1)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_GetDisabled">getDisableDates()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_SetMin">setMin(2025-01-01)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_SetMax">setMax(2025-12-31)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_ClearDisabled">clearDisableDates()</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_LocaleEN">setLocale(en-US)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRD_LocaleDE">setLocale(de-DE)</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnRD_Destroy">destroy()</button>
-                        <button type="button" class="btn btn-sm btn-outline-success" id="btnRD_Reinit">re-init</button>
+                    
+                    <div class="accordion border-0" id="accordionRangeDropdown">
+                        <div class="accordion-item border-0 bg-transparent">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none text-muted small text-uppercase fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRDMethods">
+                                    <i class="bi bi-gear me-2"></i> API Methods
+                                </button>
+                            </h2>
+                            <div id="collapseRDMethods" class="accordion-collapse collapse" data-bs-parent="#accordionRangeDropdown">
+                                <div class="accordion-body px-0 pt-3">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnSetQ1">Set Q1 2025</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnReadRange">Read value</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnClearRange">Clear</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnYear2025">Allow only 2025</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_GetDate">getDate()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_ValGet">val(get)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_ValSet">val(set Q1)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_GetDisabled">getDisableDates()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_SetMin">setMin(2025-01-01)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_SetMax">setMax(2025-12-31)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_ClearDisabled">clearDisableDates()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_LocaleEN">setLocale(en-US)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnRD_LocaleDE">setLocale(de-DE)</button>
+                                        <button type="button" class="btn btn-xs btn-outline-danger" id="btnRD_Destroy">destroy()</button>
+                                        <button type="button" class="btn btn-xs btn-outline-success" id="btnRD_Reinit">re-init</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
         </div>
 
-        <div class="col-12 col-lg-8">
-            <div class="card border-0 shadow-sm demo-card">
+        <div class="col-12 col-lg-8 mb-5">
+            <div class="card border-0 shadow-lg demo-card bg-primary text-white">
                 <div class="card-body p-4 demo-card-body">
-                    <h5 class="mb-3">Submit Beispiel</h5>
-                    <p class="text-muted small">Die Hidden-Inputs werden mit ISO-Format befüllt.</p>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-send"></i> Submit
-                    </button>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-1 fw-bold">Ready to use?</h5>
+                            <p class="mb-0 opacity-75 small">Testen Sie die Formular-Übermittlung.</p>
+                        </div>
+                        <button type="submit" class="btn btn-light btn-lg px-4 fw-bold shadow-sm">
+                            <i class="bi bi-send-fill me-2"></i> Submit
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     </form>
-<!-- form/row closed above; close container -->
-</div> <!-- /.container -->
+    </div> <!-- /.container.demo-shell -->
+</div> <!-- close body wrapper -->
 
 
 <script src="../vendor/components/jquery/jquery.min.js"></script>
@@ -185,33 +308,6 @@
     <script src="../dist/bs-datepicker.js"></script>
     <script>
         $(function () {
-            const themeStorageKey = 'bs-datepicker-demo-theme';
-            const $themeButtons = $('[data-theme-value]');
-
-            function setTheme(theme) {
-                const normalized = theme === 'dark' ? 'dark' : 'light';
-                document.documentElement.setAttribute('data-bs-theme', normalized);
-                $themeButtons.each(function () {
-                    const isActive = $(this).data('theme-value') === normalized;
-                    $(this).toggleClass('active', isActive).attr('aria-pressed', isActive ? 'true' : 'false');
-                });
-                try {
-                    window.localStorage.setItem(themeStorageKey, normalized);
-                } catch (err) {
-                    // Ignore storage failures in private browsing modes.
-                }
-            }
-
-            let storedTheme = 'light';
-            try {
-                storedTheme = window.localStorage.getItem(themeStorageKey) || 'light';
-            } catch (err) {}
-            setTheme(storedTheme);
-
-            $themeButtons.on('click', function () {
-                setTheme($(this).data('theme-value'));
-            });
-
             function fmtLocalISO(d){
                 if(!d) return '';
                 var y=d.getFullYear();
