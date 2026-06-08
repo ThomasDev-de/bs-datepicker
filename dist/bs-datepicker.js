@@ -63,12 +63,11 @@
 
 
 (function ($) {
-
     // Defaults
     $.bsDatepicker = {
         version: '1.1.2',
         default: {
-            locale: 'de-DE',           // Intl locale, e.g. 'de-DE', 'en-US'
+            locale: 'en-US',           // Intl locale, e.g. 'de-DE', 'en-US'
             range: false,               // select a date range
             inline: false,              // render inline instead of dropdown
             startOnSunday: false,       // week starts on Sunday (else Monday)
