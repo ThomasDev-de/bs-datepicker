@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- Added synchronization of the calendar view with the selected date (or range start) when opening the dropdown.
+
 ### Fixed
 
-- Prevented dropdown calendars from exceeding the viewport width and tightened month tile sizing so multi-month dropdowns wrap earlier on small devices.
+- Fixed jumping dropdown height by enforcing a constant 6-row grid for all months.
+- Stabilized dropdown width by using fixed dimensions for calendar tiles, preventing the container from shrinking on each interaction.
+- Set fixed heights for headers and day cells to ensure layout consistency across different locales and view modes.
 
 ## 1.1.2 - 2026-05-07
 

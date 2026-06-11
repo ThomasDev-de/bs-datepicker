@@ -339,15 +339,15 @@
 
         let html = '';
         html += '<div class="mb-2">';
-        html += '  <div class="fw-semibold text-capitalize text-center mb-0">' + title + '</div>';
+        html += '  <div class="fw-semibold text-capitalize text-center mb-0" style="height:1.5rem; line-height:1.5rem; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">' + title + '</div>';
         html += '  <div class="table-responsive">';
         // Compact, content-based table; cells remain even (buttons fill the cell)
         // Make the table span the full tile width so the visual center aligns with the title
         // Use table-layout: fixed to keep 7 equal columns and prevent width jumps when locale changes
         html += '    <table class="table table-sm table-borderless mb-0 text-center align-middle user-select-none w-100" style="table-layout:fixed">';
-        html += '      <thead><tr>';
+        html += '      <thead><tr style="height:1.75rem">';
         for (let i = 0; i < 7; i++) {
-            html += '<th class="text-muted small" style="white-space:nowrap;">';
+            html += '<th class="text-muted small" style="white-space:nowrap; padding:0; vertical-align:middle;">';
             html += '<span class="d-inline d-sm-none">' + weekdaysNarrow[i] + '</span>';
             html += '<span class="d-none d-sm-inline">' + weekdaysShort[i] + '</span>';
             html += '</th>';
@@ -363,9 +363,9 @@
         const startIdx = (firstWeekday - shift + 7) % 7;
         const dim = daysInMonth(year, month);
         const neededCells = startIdx + dim;
-        const rows = Math.ceil(neededCells / 7);
+        const rows = 6; // Always render 6 rows to keep height constant across different months
         for (let r = 0; r < rows; r++) {
-            html += '<tr>';
+            html += '<tr style="height:2rem">';
             for (let c = 0; c < 7; c++) {
                 const idx = r * 7 + c;
                 const dayIndex = idx - startIdx; // 0-based relative to month (can be <0 or >= dim)
@@ -563,7 +563,7 @@
         var panelCls = opts.inline ? 'bg-transparent p-2 d-inline-block' : 'bg-body border rounded-3 shadow p-1';
         html += '<div class="' + panelCls + '" style="overflow:hidden">';
         // Single-row responsive header across all breakpoints
-        html += '  <div class="pb-2 mx-2' + (opts.inline ? '' : ' border-bottom') + '">';
+        html += '  <div class="pb-2 mx-2' + (opts.inline ? '' : ' border-bottom') + '" style="height:3rem; box-sizing:border-box;">';
         html += '    <div class="d-flex align-items-center justify-content-between gap-1 gap-sm-2">';
         // Left controls
         html += '      <div class="d-flex align-items-center gap-1 flex-shrink-0">';
@@ -858,6 +858,21 @@
     function showDropdown(state) {
         if (state.opts.inline) return; // no-op
         if (state.isDisabled) return; // disabled via setDisabled()
+
+        // Sync view to selection before showing
+        const initial = resolveInitialSelection(state);
+        state.rangeStart = initial.start;
+        state.selected = initial.end;
+        if (state.rangeStart && isDisabledDate(state.rangeStart, state)) state.rangeStart = null;
+        if (state.selected && isDisabledDate(state.selected, state)) state.selected = null;
+        normalizeRangeState(state);
+
+        const firstVisible = state.rangeStart || state.selected;
+        if (firstVisible) {
+            state.current = new Date(firstVisible.getFullYear(), firstVisible.getMonth(), 1);
+        }
+        updatePanel(state);
+
         const $anchor = state.$anchor || state.$input;
         const off = $anchor.offset();
         const h = $anchor.outerHeight();
@@ -937,8 +952,8 @@
         // Calculate how many months can fit side-by-side in the current viewport
         const viewportGap = 8;
         const viewportWidth = $(window).width();
-        const outerWidth = $outer.outerWidth() || 0;
-        const effectiveTileWidth = Math.min(280, Math.max(220, outerWidth - 24));
+        // Use a stable tile width for calculations to avoid feedback loops
+        const effectiveTileWidth = 280;
 
         const bs = getComputedStyle($outer[0]);
         const paddingX = (parseFloat(bs.paddingLeft) || 0) + (parseFloat(bs.paddingRight) || 0);
@@ -961,6 +976,11 @@
         // Target width is enough to hold the months plus padding
         let targetWidth = Math.ceil((monthsInRow * effectiveTileWidth) + paddingX + 10);
         
+        // Use a consistent width for single-month view to avoid jumping
+        if (monthsInRow === 1 && !state.opts.inline) {
+            targetWidth = 300; 
+        }
+
         // Ensure it doesn't exceed total content width if all months are side-by-side
         const maxContentWidth = Math.ceil(($months.length * effectiveTileWidth) + paddingX + 10);
         targetWidth = Math.min(targetWidth, maxContentWidth);
